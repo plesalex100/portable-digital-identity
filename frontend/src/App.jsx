@@ -5,7 +5,6 @@ import './App.css'
 import Welcome from './pages/Welcome'
 import PersonalInfo from './pages/PersonalInfo'
 import AccountSecurity from './pages/AccountSecurity'
-import FlightDetails from './pages/FlightDetails'
 import Verification from './pages/Verification'
 import Review from './pages/Review'
 import AirPass from './pages/AirPass'
@@ -20,16 +19,22 @@ export function useFormData() {
 const STEPS = [
   { path: '/personal-info', label: 'Personal', num: 1 },
   { path: '/security', label: 'Security', num: 2 },
-  { path: '/flight-details', label: 'Flight', num: 3 },
-  { path: '/verification', label: 'Verify', num: 4 },
-  { path: '/review', label: 'Review', num: 5 },
-  { path: '/airpass', label: 'AirPass', num: 6 },
+  { path: '/verification', label: 'Verify', num: 3 },
+  { path: '/review', label: 'Review', num: 4 },
+  { path: '/airpass', label: 'AirPass', num: 5 },
 ]
 
-function ProgressStepper({ currentStep }) {
+// Steps for returning users who skip registration
+const LOGIN_STEPS = [
+  { path: '/verification', label: 'Verify', num: 1 },
+  { path: '/review', label: 'Review', num: 2 },
+  { path: '/airpass', label: 'AirPass', num: 3 },
+]
+
+function ProgressStepper({ steps, currentStep }) {
   return (
     <div className="progress-container">
-      {STEPS.map((step, i) => (
+      {steps.map((step, i) => (
         <div className="step-item" key={step.num}>
           <div
             className={`step-circle ${
@@ -38,7 +43,7 @@ function ProgressStepper({ currentStep }) {
           >
             {step.num < currentStep ? '✓' : step.num}
           </div>
-          {i < STEPS.length - 1 && (
+          {i < steps.length - 1 && (
             <div className={`step-line ${step.num < currentStep ? 'completed' : ''}`} />
           )}
         </div>
@@ -47,7 +52,7 @@ function ProgressStepper({ currentStep }) {
   )
 }
 
-function AppShell({ children, currentStep, showBack, onBack, isWelcome }) {
+function AppShell({ children, steps, currentStep, showBack, onBack, isWelcome, isFinal }) {
   return (
     <div className="app-shell">
       {/* Brand */}
@@ -57,8 +62,8 @@ function AppShell({ children, currentStep, showBack, onBack, isWelcome }) {
         </div>
       </div>
 
-      {/* Progress — hidden on welcome screen */}
-      {!isWelcome && <ProgressStepper currentStep={currentStep} />}
+      {/* Progress — hidden on welcome screen and final screen */}
+      {!isWelcome && !isFinal && <ProgressStepper steps={steps} currentStep={currentStep} />}
 
       {/* Header with back */}
       {showBack && (
@@ -89,17 +94,16 @@ function App() {
     email: '',
     password: '',
     confirmPassword: '',
-    // Page 3: Flight Details
-    flightNumber: '',
-    bookingReference: '',
-    flightDate: '',
-    // Page 4: Verification
+    // Page 3: Verification
     phoneNumber: '',
     faceVerified: false,
     faceImage: null,
-    // Page 5: Review
+    // Page 4: Review
     gdprConsent: false,
   })
+
+  // Track which flow the user is in
+  const [userFlow, setUserFlow] = useState('new') // 'new' or 'returning'
 
   const updateFormData = (updates) => {
     setFormData(prev => ({ ...prev, ...updates }))
@@ -109,26 +113,38 @@ function App() {
   const navigate = useNavigate()
 
   const isWelcome = location.pathname === '/'
-  const currentStep = STEPS.find(s => s.path === location.pathname)?.num || 1
-  const showBack = !isWelcome && currentStep > 1 && currentStep < 6
+  const isFinal = location.pathname === '/airpass'
+
+  // Pick the right steps based on user flow
+  const activeSteps = userFlow === 'returning' ? LOGIN_STEPS : STEPS
+  const currentStep = activeSteps.find(s => s.path === location.pathname)?.num || 1
+  const lastStepNum = activeSteps[activeSteps.length - 1].num
+  const showBack = !isWelcome && !isFinal && currentStep <= lastStepNum
 
   const goBack = () => {
+    // If on the first step of the current flow, go back to Welcome
     if (currentStep === 1) {
       navigate('/')
       return
     }
-    const prevStep = STEPS.find(s => s.num === currentStep - 1)
+    const prevStep = activeSteps.find(s => s.num === currentStep - 1)
     if (prevStep) navigate(prevStep.path)
   }
 
   return (
-    <FormDataContext.Provider value={{ formData, updateFormData }}>
-      <AppShell currentStep={currentStep} showBack={showBack} onBack={goBack} isWelcome={isWelcome}>
+    <FormDataContext.Provider value={{ formData, updateFormData, userFlow, setUserFlow }}>
+      <AppShell
+        steps={activeSteps}
+        currentStep={currentStep}
+        showBack={showBack}
+        onBack={goBack}
+        isWelcome={isWelcome}
+        isFinal={isFinal}
+      >
         <Routes>
           <Route path="/" element={<Welcome />} />
           <Route path="/personal-info" element={<PersonalInfo />} />
           <Route path="/security" element={<AccountSecurity />} />
-          <Route path="/flight-details" element={<FlightDetails />} />
           <Route path="/verification" element={<Verification />} />
           <Route path="/review" element={<Review />} />
           <Route path="/airpass" element={<AirPass />} />

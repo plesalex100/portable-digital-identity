@@ -168,3 +168,119 @@
   color: var(--accent-cyan);
   margin: 0 var(--space-sm);
 }
+
+/* ===== Final AirPass Page Animations ===== */
+
+.final-check-container {
+  margin-bottom: var(--space-xl);
+}
+
+/* SVG circle loading animation */
+.final-check-circle {
+  stroke-dasharray: 339.292;
+  stroke-dashoffset: 339.292;
+  animation: circleLoad 1.8s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+.final-check-circle.done {
+  stroke-dashoffset: 0;
+}
+
+@keyframes circleLoad {
+  0% {
+    stroke-dashoffset: 339.292;
+  }
+  100% {
+    stroke-dashoffset: 0;
+  }
+}
+
+/* Circle fill */
+.final-check-fill {
+  opacity: 0;
+  transition: opacity 0.5s ease;
+}
+
+.final-check-fill.visible {
+  opacity: 1;
+}
+
+/* Checkmark draw animation */
+.final-check-mark {
+  stroke-dasharray: 80;
+  stroke-dashoffset: 80;
+  opacity: 0;
+  transition: opacity 0.1s ease;
+}
+
+.final-check-mark.visible {
+  opacity: 1;
+  animation: drawCheck 0.5s 0.15s cubic-bezier(0.65, 0, 0.35, 1) forwards;
+}
+
+@keyframes drawCheck {
+  from {
+    stroke-dashoffset: 80;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+/* Title text animation */
+.final-title {
+  font-size: var(--font-2xl);
+  font-weight: 700;
+  background: var(--gradient-primary);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 0.6s ease, transform 0.6s ease;
+  margin-bottom: var(--space-md);
+}
+
+.final-title.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Subtitle text animation */
+.final-subtitle {
+  font-size: var(--font-base);
+  color: var(--text-secondary);
+  line-height: 1.7;
+  opacity: 0;
+  transform: translateY(16px);
+  transition: opacity 0.6s ease, transform 0.6s ease;
+  margin-bottom: var(--space-xl);
+}
+
+.final-subtitle.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Badge animation */
+.final-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: 10px 24px;
+  background: rgba(16, 185, 129, 0.08);
+  border: 1px solid rgba(16, 185, 129, 0.2);
+  border-radius: var(--radius-full);
+  font-size: var(--font-sm);
+  font-weight: 600;
+  color: var(--accent-green);
+  letter-spacing: 0.03em;
+  opacity: 0;
+  transform: scale(0.8);
+  transition: opacity 0.5s ease, transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.final-badge.visible {
+  opacity: 1;
+  transform: scale(1);
+}

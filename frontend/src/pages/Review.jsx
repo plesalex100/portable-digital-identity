@@ -22,7 +22,7 @@ function Review() {
     <div className="page-container">
       <div className="page-header">
         <h1 className="page-title">Review & Confirm</h1>
-        <p className="page-subtitle">Please review your details before generating your AirPass.</p>
+        <p className="page-subtitle">Please review your details before generating your digital passport.</p>
       </div>
 
       <form onSubmit={handleConfirm}>
@@ -51,25 +51,6 @@ function Review() {
                 {formData.documentType === 'passport' ? 'Passport' : 'ID Card'}
               </span>
               <span className="review-value">{formData.documentNumber}</span>
-            </div>
-          </div>
-
-          <div className="divider" />
-
-          {/* Flight Data */}
-          <div className="review-section">
-            <div className="review-section-title">Flight Details</div>
-            <div className="review-item">
-              <span className="review-label">Flight Number</span>
-              <span className="review-value">{formData.flightNumber}</span>
-            </div>
-            <div className="review-item">
-              <span className="review-label">Booking Reference</span>
-              <span className="review-value">{formData.bookingReference}</span>
-            </div>
-            <div className="review-item">
-              <span className="review-label">Flight Date</span>
-              <span className="review-value">{formatDate(formData.flightDate)}</span>
             </div>
           </div>
 

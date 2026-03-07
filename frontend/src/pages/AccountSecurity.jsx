@@ -6,6 +6,7 @@ function AccountSecurity() {
   const { formData, updateFormData } = useFormData()
   const navigate = useNavigate()
   const [showPassword, setShowPassword] = useState(false)
+  const [passwordTouched, setPasswordTouched] = useState(false)
 
   const passwordStrength = (() => {
     const p = formData.password
@@ -21,6 +22,7 @@ function AccountSecurity() {
   const strengthLabel = ['', 'Weak', 'Fair', 'Good', 'Strong'][passwordStrength] || ''
   const strengthClass = passwordStrength <= 1 ? 'weak' : passwordStrength <= 2 ? 'medium' : 'strong'
 
+  const passwordTooShort = formData.password.length > 0 && formData.password.length < 8
   const passwordsMatch = formData.password && formData.password === formData.confirmPassword
   const isValid =
     formData.email.trim() &&
@@ -30,7 +32,7 @@ function AccountSecurity() {
 
   const handleCreateAccount = (e) => {
     e.preventDefault()
-    if (isValid) navigate('/flight-details')
+    if (isValid) navigate('/verification')
   }
 
   return (
@@ -64,7 +66,11 @@ function AccountSecurity() {
                 type={showPassword ? 'text' : 'password'}
                 placeholder="Min. 8 characters"
                 value={formData.password}
-                onChange={(e) => updateFormData({ password: e.target.value })}
+                onChange={(e) => {
+                  updateFormData({ password: e.target.value })
+                  if (!passwordTouched) setPasswordTouched(true)
+                }}
+                onBlur={() => setPasswordTouched(true)}
                 required
                 minLength={8}
                 style={{ paddingRight: '48px' }}
@@ -88,7 +94,14 @@ function AccountSecurity() {
                 {showPassword ? '🙈' : '👁'}
               </button>
             </div>
-            {formData.password && (
+            {/* Error: password too short */}
+            {passwordTouched && passwordTooShort && (
+              <span className="text-sm" style={{ color: 'var(--accent-red)', display: 'flex', alignItems: 'center', gap: '4px', marginTop: '4px' }}>
+                ⚠ Password must be at least 8 characters ({formData.password.length}/8)
+              </span>
+            )}
+            {/* Strength indicator — only show when ≥ 8 characters */}
+            {formData.password.length >= 8 && (
               <>
                 <div className="password-strength">
                   {[1, 2, 3, 4].map(i => (

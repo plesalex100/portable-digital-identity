@@ -1,7 +1,19 @@
 import { useNavigate } from 'react-router-dom'
+import { useFormData } from '../App'
 
 function Welcome() {
   const navigate = useNavigate()
+  const { setUserFlow } = useFormData()
+
+  const handleNewAccount = () => {
+    setUserFlow('new')
+    navigate('/personal-info')
+  }
+
+  const handleExistingAccount = () => {
+    setUserFlow('returning')
+    navigate('/verification')
+  }
 
   return (
     <div className="page-container" style={{ justifyContent: 'center', textAlign: 'center' }}>
@@ -53,13 +65,13 @@ function Welcome() {
       <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-md)' }}>
         <button
           className="btn btn-primary btn-full"
-          onClick={() => navigate('/personal-info')}
+          onClick={handleNewAccount}
         >
           Create New Account
         </button>
         <button
           className="btn btn-secondary btn-full"
-          onClick={() => navigate('/flight-details')}
+          onClick={handleExistingAccount}
         >
           I Already Have an Account →
         </button>
