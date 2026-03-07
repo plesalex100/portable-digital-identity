@@ -1,1 +1,57 @@
 @import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --color-background: oklch(0.13 0.028 265);
+  --color-foreground: oklch(0.97 0.005 265);
+
+  --color-card: oklch(0.17 0.025 265);
+  --color-card-foreground: oklch(0.97 0.005 265);
+
+  --color-popover: oklch(0.13 0.028 265);
+  --color-popover-foreground: oklch(0.97 0.005 265);
+
+  /* Primary = Cyan (matching current cyan-400/500 theme) */
+  --color-primary: oklch(0.79 0.135 194);
+  --color-primary-foreground: oklch(0.13 0.028 265);
+
+  /* Secondary = Slate-800 glass surfaces */
+  --color-secondary: oklch(0.25 0.015 265);
+  --color-secondary-foreground: oklch(0.88 0.01 265);
+
+  --color-muted: oklch(0.22 0.015 265);
+  --color-muted-foreground: oklch(0.6 0.01 265);
+
+  /* Accent = Emerald (matching current emerald-400 success) */
+  --color-accent: oklch(0.76 0.17 163);
+  --color-accent-foreground: oklch(0.13 0.028 265);
+
+  --color-destructive: oklch(0.65 0.2 25);
+  --color-destructive-foreground: oklch(0.97 0.005 265);
+
+  --color-border: oklch(0.25 0.015 265);
+  --color-input: oklch(0.25 0.015 265);
+  --color-ring: oklch(0.79 0.135 194);
+
+  --radius: 0.75rem;
+
+  --color-sidebar-background: oklch(0.13 0.028 265);
+  --color-sidebar-foreground: oklch(0.88 0.01 265);
+  --color-sidebar-primary: oklch(0.79 0.135 194);
+  --color-sidebar-primary-foreground: oklch(0.13 0.028 265);
+  --color-sidebar-accent: oklch(0.22 0.015 265);
+  --color-sidebar-accent-foreground: oklch(0.88 0.01 265);
+  --color-sidebar-border: oklch(0.25 0.015 265);
+  --color-sidebar-ring: oklch(0.79 0.135 194);
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
