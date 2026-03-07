@@ -19,7 +19,7 @@ const ALLOWED_MIME_TYPES = ["image/jpeg", "image/png", "image/bmp", "image/gif"]
 
 const upload = multer({
     storage: multer.memoryStorage(),
-    limits: { fileSize: 6 * 1024 * 1024 }, // Azure Face API limit: 6 MB per image
+    limits: { fileSize: 10 * 1024 * 1024 }, // Azure Face API limit: 10 MB per image
     fileFilter: (_req, file, cb) => {
         if (ALLOWED_MIME_TYPES.includes(file.mimetype)) {
             cb(null, true);

@@ -1,0 +1,15 @@
+meta {
+  name: Verify Person
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{baseUrl}}/api/face/verify
+  body: multipartForm
+  auth: none
+}
+
+body:multipart-form {
+  image: @file(/path/to/photo.jpg)
+}

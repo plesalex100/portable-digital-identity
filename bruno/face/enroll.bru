@@ -1,0 +1,16 @@
+meta {
+  name: Enroll Person
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{baseUrl}}/api/face/enroll
+  body: multipartForm
+  auth: none
+}
+
+body:multipart-form {
+  name: John Doe
+  images: @file(/path/to/photo1.jpg)
+}
