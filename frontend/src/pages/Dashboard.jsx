@@ -124,6 +124,7 @@ export default function Dashboard() {
     queryFn: fetchPassengers,
     refetchInterval: 10000,
   });
+  console.table(passengers)
 
   const [groupBy, setGroupBy] = useState('none'); // 'none' | 'status' | 'flight'
   const [search, setSearch] = useState('');

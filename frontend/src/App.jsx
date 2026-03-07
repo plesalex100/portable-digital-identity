@@ -3,7 +3,6 @@ import { AnimatePresence } from 'framer-motion';
 import PassportEntry from './pages/PassportEntry';
 import FaceRecognition from './pages/FaceRecognition';
 import FinalPass from './pages/FinalPass';
-import AdminMonitor from './pages/AdminMonitor';
 import Verification from './pages/Verification';
 import Dashboard from './pages/Dashboard';
 
@@ -20,8 +19,7 @@ function AnimatedRoutes() {
         <Route path="/face-scan" element={<FaceRecognition />} />
         <Route path="/pass" element={<FinalPass />} />
         <Route path="/verify" element={<Verification />} />
-        <Route path="/dashboard" element={<AdminMonitor />} />
-        <Route path="/activity" element={<Dashboard />} />
+        <Route path="/dashboard" element={<Dashboard />} />
       </Routes>
     </AnimatePresence>
   );
@@ -44,7 +42,7 @@ export default function App() {
       {/* Mobile App Viewport */}
       <div className="w-full h-[100dvh] relative shadow-xl flex flex-col overflow-hidden sm:border-x sm:border-slate-200">
 
-        <main className="flex-1 overflow-x-hidden overflow-y-auto scroll-smooth no-scrollbar relative w-full h-full">
+        <main className="flex items-center justify-center flex-1 overflow-x-hidden overflow-y-auto scroll-smooth no-scrollbar relative w-full h-full">
           <AnimatedRoutes />
         </main>
 
