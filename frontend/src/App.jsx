@@ -4,6 +4,7 @@ import PassportEntry from './pages/PassportEntry';
 import FaceRecognition from './pages/FaceRecognition';
 import FinalPass from './pages/FinalPass';
 import AdminMonitor from './pages/AdminMonitor';
+import Verification from './pages/Verification';
 
 function AnimatedRoutes() {
   const location = useLocation();
@@ -14,6 +15,7 @@ function AnimatedRoutes() {
         <Route path="/" element={<PassportEntry />} />
         <Route path="/face-scan" element={<FaceRecognition />} />
         <Route path="/pass" element={<FinalPass />} />
+        <Route path="/verify" element={<Verification />} />
         <Route path="/dashboard" element={<AdminMonitor />} />
       </Routes>
     </AnimatePresence>
