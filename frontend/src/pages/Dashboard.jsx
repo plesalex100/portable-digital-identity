@@ -28,6 +28,17 @@ const STATUS_CONFIG = {
 
 const STATUS_ORDER = Object.keys(STATUS_CONFIG);
 
+const fetchHealth = async () => {
+  try {
+    const res = await fetch(`${API_BASE}/api/face/health`);
+    if (!res.ok) return false;
+    const json = await res.json();
+    return json.success === true;
+  } catch {
+    return false;
+  }
+};
+
 const fetchPassengers = async () => {
   const res = await fetch(`${API_BASE}/api/passengers`);
   const json = await res.json();
@@ -46,6 +57,11 @@ function StatusBadge({ status }) {
 }
 
 function ScoreBar({ score }) {
+  if (score == null) {
+    return (
+      <span className="text-xs text-muted-foreground">Pending</span>
+    );
+  }
   const isLow = score < 70;
   return (
     <div className="flex items-center gap-2">
@@ -123,6 +139,12 @@ export default function Dashboard() {
     queryKey: ['passengers'],
     queryFn: fetchPassengers,
     refetchInterval: 10000,
+  });
+
+  const { data: systemOnline = false } = useQuery({
+    queryKey: ['health'],
+    queryFn: fetchHealth,
+    refetchInterval: 15000,
   });
   console.table(passengers)
 
@@ -255,7 +277,10 @@ export default function Dashboard() {
           </p>
         </div>
         <Badge variant="secondary" className="text-[10px]">
-          System <span className="text-emerald-600 ml-1">Online</span>
+          System{' '}
+          <span className={`ml-1 ${systemOnline ? 'text-emerald-600' : 'text-red-500'}`}>
+            {systemOnline ? 'Online' : 'Offline'}
+          </span>
         </Badge>
       </div>
 

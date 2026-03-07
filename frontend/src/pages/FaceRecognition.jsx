@@ -137,7 +137,7 @@ export default function FaceRecognition() {
     return () => clearInterval(interval);
   }, [scanStage, progress, navigate, userData, capturePhoto, stopCamera]);
 
-  const circumference = 2 * Math.PI * 120;
+  const circumference = 2 * Math.PI * 150;
   const strokeDashoffset = circumference - (progress / 100) * circumference;
 
   return (
@@ -146,11 +146,11 @@ export default function FaceRecognition() {
       animate={{ opacity: 1 }}
       exit={{ opacity: 0, scale: 0.95 }}
       transition={{ duration: 0.6 }}
-      className="flex flex-col items-center justify-center h-full bg-background px-6 sm:bg-card sm:border sm:border-border sm:rounded-2xl sm:shadow-sm sm:max-w-lg sm:mx-auto sm:my-12 sm:h-auto sm:py-12"
+      className="flex flex-col items-center justify-center h-full bg-background px-6 py-12 sm:bg-card sm:border sm:border-border sm:rounded-2xl sm:shadow-sm sm:max-w-lg sm:mx-auto sm:my-12 sm:h-auto sm:py-12"
     >
       <canvas ref={canvasRef} className="hidden" />
 
-      <div className="absolute top-12 w-full text-center">
+      <div className="w-full text-center mb-8">
         <h2 className="text-xl font-bold text-foreground">
           Create Your Biometric Pass
         </h2>
@@ -162,7 +162,7 @@ export default function FaceRecognition() {
       </div>
 
       {/* The Hero Camera View */}
-      <div className="relative mt-16 w-[280px] h-[280px] flex items-center justify-center">
+      <div className="relative w-[340px] h-[340px] flex items-center justify-center">
 
         {/* Glow Effects */}
         <div className={`absolute inset-0 rounded-full blur-2xl opacity-20 transition-colors duration-1000 ${
@@ -170,14 +170,14 @@ export default function FaceRecognition() {
         }`}></div>
 
         {/* Outer Progress Ring SVG */}
-        <svg className="absolute w-[300px] h-[300px] -rotate-90 z-20 pointer-events-none border-transparent">
+        <svg className="absolute w-[360px] h-[360px] -rotate-90 z-20 pointer-events-none border-transparent" viewBox="0 0 360 360">
           <circle
-            cx="150" cy="150" r="120"
+            cx="180" cy="180" r="150"
             stroke="rgba(30, 41, 59, 0.5)" strokeWidth="6" fill="none"
           />
           <circle
-            cx="150" cy="150" r="120"
-            stroke={scanStage === 'complete' ? '#22c55e' : scanStage === 'error' ? '#f87171' : scanStage === 'duplicate' ? '#f59e0b' : '#0ea5e9'}
+            cx="180" cy="180" r="150"
+            stroke={scanStage === 'complete' ? '#22c55e' : scanStage === 'error' ? '#f87171' : scanStage === 'duplicate' ? '#f59e0b' : '#FACD2C'}
             strokeWidth="6"
             fill="none"
             strokeLinecap="round"
@@ -186,12 +186,12 @@ export default function FaceRecognition() {
               strokeDashoffset: strokeDashoffset,
               transition: 'stroke-dashoffset 0.1s ease-out'
             }}
-            className="drop-shadow-[0_0_8px_rgba(14,165,233,0.5)]"
+            className="drop-shadow-[0_0_8px_rgba(250,205,44,0.5)]"
           />
         </svg>
 
         {/* The Camera Slot Wrapper */}
-        <div className="relative w-64 h-64 rounded-full overflow-hidden border-2 border-slate-200 bg-background shadow-inner z-10 flex items-center justify-center">
+        <div className="relative w-80 h-80 rounded-full overflow-hidden border-2 border-slate-200 bg-background shadow-inner z-10 flex items-center justify-center">
 
           {/* Real camera stream */}
           <video
@@ -219,7 +219,7 @@ export default function FaceRecognition() {
         </div>
       </div>
 
-      <div className="absolute bottom-12 w-full px-8 text-center">
+      <div className="w-full px-8 text-center mt-8">
         {scanStage === 'duplicate' ? (
           <div className="space-y-2">
             <p className="text-sm text-amber-500 font-medium">{errorMsg}</p>

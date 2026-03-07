@@ -31,16 +31,16 @@ export default function App() {
 
   if (isFullWidth) {
     return (
-      <div className="min-h-screen bg-background text-foreground font-sans selection:bg-primary/20">
+      <div className="min-h-screen text-foreground font-sans">
         <AnimatedRoutes />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-slate-100 sm:bg-slate-200 flex justify-center text-foreground font-sans selection:bg-primary/20">
+    <div className="min-h-screen bg-background flex justify-center text-foreground font-sans">
       {/* Mobile App Viewport */}
-      <div className="w-full h-[100dvh] relative shadow-xl flex flex-col overflow-hidden sm:border-x sm:border-slate-200">
+      <div className="w-full h-[100dvh] relative shadow-xl flex flex-col overflow-hidden sm:border-x">
 
         <main className="flex items-center justify-center flex-1 overflow-x-hidden overflow-y-auto scroll-smooth no-scrollbar relative w-full h-full">
           <AnimatedRoutes />

@@ -1,27 +1,19 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { Check, ChevronDown, CalendarIcon, UserRound, CheckCircle2, Plane, ScanFace, ShieldCheck } from 'lucide-react';
-import { useQuery } from '@tanstack/react-query';
+import { CheckCircle2, ScanFace, ShieldCheck, UserRound, BookOpen, Globe, CalendarIcon, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
 
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Command, CommandInput, CommandList, CommandEmpty, CommandGroup, CommandItem } from '@/components/ui/command';
-import { Calendar } from '@/components/ui/calendar';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
-import { cn } from '@/lib/utils';
+import { Ticket } from 'lucide-react';
 import { checkPassenger } from '@/api';
 
-const PRESET_USERS = [
-  { fullName: 'Ples Alexandru-Nicusor', passportNumber: 'R14827365', nationality: 'Romania', expiryDate: new Date('2029-08-15') },
-  { fullName: 'Raul Covaci', passportNumber: 'R27391048', nationality: 'Romania', expiryDate: new Date('2030-03-22') },
-  { fullName: 'Stefan Eduard', passportNumber: 'R58203947', nationality: 'Romania', expiryDate: new Date('2028-11-07') },
-  { fullName: 'Fanea Mihai', passportNumber: 'R63948172', nationality: 'Romania', expiryDate: new Date('2031-01-30') },
-  { fullName: 'Madar Bogdan', passportNumber: 'R41750283', nationality: 'Romania', expiryDate: new Date('2029-06-18') },
-];
+const generatePassportNumber = () => {
+  const digits = Array.from({ length: 8 }, () => Math.floor(Math.random() * 10)).join('');
+  return `R${digits}`;
+};
 
 const SHARED_FLIGHT = {
   flightNumber: 'SG372',
@@ -31,42 +23,20 @@ const SHARED_FLIGHT = {
   gate: 'A7',
 };
 
-const fetchCountries = async () => {
-  const response = await fetch('https://restcountries.com/v3.1/all?fields=name,flag,cca2,cca3');
-  return response.json();
-}
 
 export default function PassportEntry() {
   const navigate = useNavigate();
-  const { data: countries } = useQuery({ queryKey: ['countries'], queryFn: fetchCountries })
-
-  const [userDropdownOpen, setUserDropdownOpen] = useState(false);
-  const [comboboxOpen, setComboboxOpen] = useState(false);
-  const [calendarOpen, setCalendarOpen] = useState(false);
-  const [selectedUser, setSelectedUser] = useState(null);
 
   const [formData, setFormData] = useState({
     fullName: '',
-    passportNumber: '',
-    nationality: '',
-    expiryDate: null
+    passportNumber: generatePassportNumber(),
+    nationality: 'Romania',
+    expiryDate: new Date('2029-08-15'),
   });
 
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [alreadyCheckedIn, setAlreadyCheckedIn] = useState(false);
   const [checking, setChecking] = useState(false);
-
-  const handleUserSelect = (user) => {
-    setSelectedUser(user.fullName);
-    setFormData({
-      fullName: user.fullName,
-      passportNumber: user.passportNumber,
-      nationality: user.nationality,
-      expiryDate: user.expiryDate,
-    });
-    setUserDropdownOpen(false);
-    setAlreadyCheckedIn(false);
-  };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -80,6 +50,7 @@ export default function PassportEntry() {
 
     setChecking(true);
     setAlreadyCheckedIn(false);
+    await new Promise(resolve => setTimeout(resolve, 2000));
     try {
       const result = await checkPassenger(formData.passportNumber);
       if (result.exists) {
@@ -96,209 +67,25 @@ export default function PassportEntry() {
 
   const mergedUserData = { ...formData, ...SHARED_FLIGHT, expiryDate: formData.expiryDate ? format(formData.expiryDate, 'yyyy-MM-dd') : '' };
 
-  const sortedCountries = countries?.slice().sort((a, b) => a.name.common.localeCompare(b.name.common));
-
   const isFormValid = formData.fullName && formData.passportNumber && formData.nationality && formData.expiryDate;
 
-  return (
-    <motion.div
-      initial={{ opacity: 0, x: 50 }}
-      animate={{ opacity: 1, x: 0 }}
-      exit={{ opacity: 0, x: -50 }}
-      transition={{ duration: 0.5, ease: "easeOut" }}
-      className="p-6 flex flex-col h-full md:py-12 md:max-w-lg md:mx-auto"
-    >
-      <div className="flex-1 w-full max-w-sm mx-auto sm:bg-card sm:border sm:border-border sm:rounded-2xl sm:shadow-sm sm:p-6 sm:flex-initial">
-        <div className="mb-6">
-          <h1 className="text-2xl font-bold text-foreground">
-            Online Check-in
-          </h1>
-          <p className="text-muted-foreground text-sm mt-1">
-            Enter your details to check in for your flight
-          </p>
-        </div>
-        <form onSubmit={handleSubmit} className="flex flex-col gap-5">
-          <div className="space-y-1.5">
-            <Label>Passenger</Label>
-            <Popover open={userDropdownOpen} onOpenChange={setUserDropdownOpen}>
-              <PopoverTrigger asChild>
-                <button
-                  type="button"
-                  role="combobox"
-                  aria-expanded={userDropdownOpen}
-                  className={cn(
-                    "flex h-12 w-full items-center justify-between rounded-xl border border-input bg-white px-4 py-3.5 text-sm transition-colors",
-                    selectedUser ? "text-foreground" : "text-muted-foreground"
-                  )}
-                >
-                  <span className="flex items-center gap-2 truncate">
-                    <UserRound className="h-4 w-4 text-primary shrink-0" />
-                    {selectedUser || "Select passenger"}
-                  </span>
-                  <ChevronDown className={cn("ml-2 h-4 w-4 shrink-0 text-muted-foreground transition-transform", userDropdownOpen && "rotate-180")} />
-                </button>
-              </PopoverTrigger>
-              <PopoverContent className="p-0 overflow-hidden" align="start" style={{ width: 'var(--radix-popover-trigger-width)' }}>
-                <Command className="w-full">
-                  <CommandList>
-                    <CommandGroup>
-                      {PRESET_USERS.map((user) => (
-                        <CommandItem
-                          key={user.fullName}
-                          value={user.fullName}
-                          onSelect={() => handleUserSelect(user)}
-                        >
-                          <UserRound className="h-4 w-4 text-primary mr-2 shrink-0" />
-                          <span className="text-sm truncate">{user.fullName}</span>
-                          {selectedUser === user.fullName && (
-                            <Check className="ml-auto h-4 w-4 text-primary shrink-0" />
-                          )}
-                        </CommandItem>
-                      ))}
-                    </CommandGroup>
-                  </CommandList>
-                </Command>
-              </PopoverContent>
-            </Popover>
+  if (showSuccessModal) {
+    return (
+      <motion.div
+        initial={{ opacity: 0, x: 50 }}
+        animate={{ opacity: 1, x: 0 }}
+        exit={{ opacity: 0, x: -50 }}
+        transition={{ duration: 0.5, ease: "easeOut" }}
+        className="p-6 flex flex-col h-full md:py-12 w-full md:max-w-2xl md:mx-auto"
+      >
+        <div className="flex-1 w-full mx-auto sm:bg-card sm:border sm:border-border sm:rounded-2xl sm:shadow-sm sm:p-6 sm:flex-initial flex flex-col items-center text-center">
+          <div className="w-16 h-16 rounded-full bg-emerald-50 flex items-center justify-center mx-auto mb-4">
+            <CheckCircle2 className="w-8 h-8 text-emerald-500" />
           </div>
+          <h1 className="text-xl font-bold text-foreground">You're checked in!</h1>
+          <p className="text-muted-foreground text-sm mt-1">Here's your flight summary</p>
 
-          <div className="space-y-1.5">
-            <Label>Full Legal Name</Label>
-            <Input
-              name="fullName"
-              value={formData.fullName}
-              onChange={handleChange}
-              placeholder="JOHN DOE"
-              required
-            />
-          </div>
-
-          <div className="space-y-1.5">
-            <Label>Passport Number</Label>
-            <Input
-              name="passportNumber"
-              value={formData.passportNumber}
-              onChange={handleChange}
-              placeholder="A12345678"
-              required
-            />
-          </div>
-
-          <div className="space-y-1.5">
-            <Label>Nationality</Label>
-            <Popover open={comboboxOpen} onOpenChange={setComboboxOpen}>
-              <PopoverTrigger asChild>
-                <button
-                  type="button"
-                  role="combobox"
-                  aria-expanded={comboboxOpen}
-                  className={cn(
-                    "flex h-12 w-full items-center justify-between rounded-xl border border-input bg-white px-4 py-3.5 text-sm transition-colors",
-                    formData.nationality ? "text-foreground" : "text-muted-foreground"
-                  )}
-                >
-                  <span className="truncate">
-                    {formData.nationality
-                      ? `${sortedCountries?.find(c => c.name.common === formData.nationality)?.flag || ''} ${formData.nationality}`
-                      : "Select Country"}
-                  </span>
-                  <ChevronDown className={cn("ml-2 h-4 w-4 shrink-0 text-muted-foreground transition-transform", comboboxOpen && "rotate-180")} />
-                </button>
-              </PopoverTrigger>
-              <PopoverContent className="p-0 overflow-hidden" align="start" style={{ width: 'var(--radix-popover-trigger-width)' }}>
-                <Command className="w-full">
-                  <CommandInput placeholder="Search country..." />
-                  <CommandList>
-                    <CommandEmpty>No country found.</CommandEmpty>
-                    <CommandGroup>
-                      {sortedCountries?.map((country) => (
-                        <CommandItem
-                          key={country.name.common}
-                          value={country.name.common}
-                          onSelect={(value) => {
-                            setFormData(prev => ({ ...prev, nationality: value }));
-                            setComboboxOpen(false);
-                          }}
-                        >
-                          <span className="text-xl">{country.flag}</span>
-                          <span className="text-sm truncate">{country.name.common}</span>
-                          {formData.nationality === country.name.common && (
-                            <Check className="ml-auto h-4 w-4 text-primary shrink-0" />
-                          )}
-                        </CommandItem>
-                      ))}
-                    </CommandGroup>
-                  </CommandList>
-                </Command>
-              </PopoverContent>
-            </Popover>
-          </div>
-
-          <div className="space-y-1.5">
-            <Label>Expiry Date</Label>
-            <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
-              <PopoverTrigger asChild>
-                <button
-                  type="button"
-                  className={cn(
-                    "flex h-12 w-full items-center rounded-xl border border-input bg-white px-4 py-3.5 text-sm transition-colors",
-                    formData.expiryDate ? "text-foreground" : "text-muted-foreground"
-                  )}
-                >
-                  <CalendarIcon className="mr-3 h-4 w-4 text-primary" />
-                  {formData.expiryDate ? format(formData.expiryDate, "PPP") : "Select expiry date"}
-                </button>
-              </PopoverTrigger>
-              <PopoverContent className="p-0 overflow-hidden" align="start" style={{ width: 'var(--radix-popover-trigger-width)' }}>
-                <Calendar
-                  mode="single"
-                  selected={formData.expiryDate}
-                  onSelect={(date) => {
-                    setFormData(prev => ({ ...prev, expiryDate: date }));
-                    setCalendarOpen(false);
-                  }}
-                  disabled={(date) => date < new Date()}
-                  initialFocus
-                />
-              </PopoverContent>
-            </Popover>
-          </div>
-
-          {alreadyCheckedIn && (
-            <p className="text-sm text-amber-600 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 text-center">
-              This passport is already checked in.
-            </p>
-          )}
-
-          <div className="pt-4 pb-4 sm:pb-0">
-            <Button
-              type="submit"
-              disabled={!isFormValid || checking}
-              variant={isFormValid ? "default" : "secondary"}
-              size="lg"
-              className="w-full py-4 group"
-              asChild
-            >
-              <motion.button whileTap={{ scale: 0.96 }}>
-                {checking ? 'Checking...' : 'Check In'}
-              </motion.button>
-            </Button>
-          </div>
-        </form>
-      </div>
-      <Dialog open={showSuccessModal} onOpenChange={setShowSuccessModal}>
-        <DialogContent className="w-[calc(100%-2rem)] max-w-sm mx-auto rounded-2xl">
-          <DialogHeader className="items-center text-center">
-            <div className="w-16 h-16 rounded-full bg-emerald-50 flex items-center justify-center mx-auto mb-3">
-              <CheckCircle2 className="w-8 h-8 text-emerald-500" />
-            </div>
-            <DialogTitle className="text-xl font-bold">You're checked in!</DialogTitle>
-            <DialogDescription className="text-muted-foreground">
-              Here's your flight summary
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="bg-slate-50 rounded-xl p-4 space-y-2 text-sm">
+          <div className="bg-slate-50 rounded-xl p-4 space-y-2 text-sm w-full mt-6">
             <div className="flex justify-between">
               <span className="text-muted-foreground">Passenger</span>
               <span className="font-medium">{formData.fullName}</span>
@@ -317,7 +104,7 @@ export default function PassportEntry() {
             </div>
           </div>
 
-          <div className="flex flex-col gap-3 mt-2">
+          <div className="flex flex-col gap-3 mt-6 w-full">
             <p className="text-sm text-muted-foreground text-center">
               Skip the queues — a quick face scan lets you breeze through security and boarding in seconds.
             </p>
@@ -325,7 +112,7 @@ export default function PassportEntry() {
               variant="accent"
               size="lg"
               className="w-full"
-              onClick={() => { setShowSuccessModal(false); setTimeout(() => navigate('/face-scan', { state: { userData: mergedUserData } }), 300); }}
+              onClick={() => navigate('/face-scan', { state: { userData: mergedUserData } })}
               asChild
             >
               <motion.button whileTap={{ scale: 0.96 }} className="text-sm">
@@ -339,13 +126,116 @@ export default function PassportEntry() {
             </div>
             <Button
               variant="ghost"
-              onClick={() => { setShowSuccessModal(false); setTimeout(() => navigate('/pass', { state: { userData: mergedUserData } }), 300); }}
+              className="text-sm"
+              onClick={() => {}}
             >
-              Skip for now
+              <Ticket className="w-4 h-4 shrink-0" />
+              Download Normal Boarding Ticket
             </Button>
           </div>
-        </DialogContent>
-      </Dialog>
+        </div>
+      </motion.div>
+    );
+  }
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, x: 50 }}
+      animate={{ opacity: 1, x: 0 }}
+      exit={{ opacity: 0, x: -50 }}
+      transition={{ duration: 0.5, ease: "easeOut" }}
+      className="p-6 flex flex-col h-full md:py-12 w-full md:max-w-2xl md:mx-auto"
+    >
+      <div className="flex-1 w-full mx-auto sm:bg-card sm:border sm:border-border sm:rounded-2xl sm:shadow-sm sm:p-6 sm:flex-initial">
+        <div className="mb-6">
+          <h1 className="text-2xl font-bold text-foreground">
+            Online Check-in
+          </h1>
+          <p className="text-muted-foreground text-sm mt-1">
+            Enter your details to check in for your flight
+          </p>
+        </div>
+        <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+          <div className="space-y-1.5">
+            <Label>Full Legal Name</Label>
+            <div className="relative">
+              <UserRound className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-primary" />
+              <Input
+                name="fullName"
+                value={formData.fullName}
+                onChange={handleChange}
+                placeholder="JOHN DOE"
+                required
+                className="pl-11"
+              />
+            </div>
+          </div>
+
+          <div className="space-y-1.5">
+            <Label>Passport Number</Label>
+            <div className="relative">
+              <BookOpen className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-primary" />
+              <Input
+                value={formData.passportNumber}
+                readOnly
+                className="bg-muted pl-11"
+              />
+            </div>
+          </div>
+
+          <div className="space-y-1.5">
+            <Label>Nationality</Label>
+            <div className="relative">
+              <Globe className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-primary" />
+              <Input
+                value={formData.nationality}
+                readOnly
+                className="bg-muted pl-11"
+              />
+            </div>
+          </div>
+
+          <div className="space-y-1.5">
+            <Label>Expiry Date</Label>
+            <div className="relative">
+              <CalendarIcon className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-primary" />
+              <Input
+                value={format(formData.expiryDate, "PPP")}
+                readOnly
+                className="bg-muted pl-11"
+              />
+            </div>
+          </div>
+
+          {alreadyCheckedIn && (
+            <p className="text-sm text-amber-600 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 text-center">
+              This passport is already checked in.
+            </p>
+          )}
+
+          <div className="pt-4 pb-4 sm:pb-0">
+            <Button
+              type="submit"
+              disabled={!isFormValid || checking}
+              variant={isFormValid ? "default" : "secondary"}
+              size="lg"
+              className="w-full py-4 group"
+              asChild
+            >
+              <motion.button whileTap={{ scale: 0.96 }}>
+                {checking ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Checking...
+                  </>
+                ) : (
+                  'Check In'
+                )}
+              </motion.button>
+            </Button>
+          </div>
+        </form>
+      </div>
     </motion.div>
   );
 }
