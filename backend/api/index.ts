@@ -3,7 +3,7 @@ import { Router } from "express";
 
 const router = Router();
 
-import faceAPI from './face.js';
+import faceAPI from './face';
 router.use('/face', faceAPI);
 
 export default router;
