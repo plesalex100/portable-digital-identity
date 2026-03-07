@@ -12,5 +12,7 @@ post {
 
 body:multipart-form {
   name: John Doe
-  images: @file(/path/to/photo1.jpg)
+  images[]: @file(/path/to/photo1.jpg)
+  images[]: @file(/path/to/photo2.jpg)
+  images[]: @file(/path/to/photo3.jpg)
 }
