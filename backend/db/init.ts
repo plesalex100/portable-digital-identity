@@ -1,13 +1,14 @@
 import mongoose from "mongoose";
-const { MONGO_URL, DATABASE_NAME } = process.env;
-
-if (!MONGO_URL || !DATABASE_NAME) {
-    throw new Error("Please provide a mongo url and database name in the .env file");
-}
 
 export const ensureDatabaseConnected = async () => {
     if (mongoose.connection.readyState === mongoose.ConnectionStates.connected) {
         return;
+    }
+
+    const { MONGO_URL, DATABASE_NAME } = process.env;
+
+    if (!MONGO_URL || !DATABASE_NAME) {
+        throw new Error("Please provide a mongo url and database name in the .env file");
     }
 
     try {

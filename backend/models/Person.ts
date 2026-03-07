@@ -2,9 +2,9 @@ import mongoose from "mongoose";
 
 const personSchema = new mongoose.Schema({
     _id: { type: mongoose.SchemaTypes.ObjectId, auto: true },
-    name: { type: String },
-    faceId: String
-})
-
+    name: { type: String, required: true },
+    azurePersonId: { type: String, default: null, index: true },
+    enrolledAt: { type: Date, default: null },
+});
 
 export default mongoose.model("Person", personSchema, "person");
