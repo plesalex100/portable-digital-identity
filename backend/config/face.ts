@@ -1,8 +1,8 @@
 export interface FaceConfig {
-    endpoint: string;
-    apiKey: string;
-    recognitionModel: "recognition_01" | "recognition_02" | "recognition_03" | "recognition_04";
-    personGroupId: string;
+    awsRegion: string;
+    awsAccessKeyId: string;
+    awsSecretAccessKey: string;
+    s3Bucket: string;
     confidenceThreshold: number;
     maxImages: number;
 }
@@ -13,24 +13,26 @@ export function getFaceConfig(): FaceConfig {
     if (_config) return _config;
 
     const {
-        FACE_ENDPOINT,
-        FACE_API_KEY,
-        FACE_RECOGNITION_MODEL,
-        FACE_PERSON_GROUP_ID,
+        AWS_REGION,
+        AWS_ACCESS_KEY_ID,
+        AWS_SECRET_ACCESS_KEY,
+        AWS_S3_BUCKET,
         FACE_CONFIDENCE_THRESHOLD,
         FACE_MAX_IMAGES,
     } = process.env;
 
-    if (!FACE_ENDPOINT || !FACE_API_KEY) {
-        throw new Error("Please provide FACE_ENDPOINT and FACE_API_KEY in the .env file");
+    if (!AWS_REGION || !AWS_ACCESS_KEY_ID || !AWS_SECRET_ACCESS_KEY || !AWS_S3_BUCKET) {
+        throw new Error(
+            "Please provide AWS_REGION, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, and AWS_S3_BUCKET in the .env file",
+        );
     }
 
     _config = {
-        endpoint: FACE_ENDPOINT,
-        apiKey: FACE_API_KEY,
-        recognitionModel: (FACE_RECOGNITION_MODEL || "recognition_04") as FaceConfig["recognitionModel"],
-        personGroupId: FACE_PERSON_GROUP_ID || "hacktech-2026",
-        confidenceThreshold: parseFloat(FACE_CONFIDENCE_THRESHOLD || "0.6"),
+        awsRegion: AWS_REGION,
+        awsAccessKeyId: AWS_ACCESS_KEY_ID,
+        awsSecretAccessKey: AWS_SECRET_ACCESS_KEY,
+        s3Bucket: AWS_S3_BUCKET,
+        confidenceThreshold: parseFloat(FACE_CONFIDENCE_THRESHOLD || "90"),
         maxImages: parseInt(FACE_MAX_IMAGES || "10", 10),
     };
 

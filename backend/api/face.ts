@@ -2,12 +2,9 @@ import { Router } from "express";
 import multer from "multer";
 import { getFaceConfig } from "../config/face.js";
 import {
-    ensurePersonGroup,
-    createPerson,
-    addFaceToPerson,
-    trainPersonGroup,
+    enrollFace,
+    compareFaceAgainstEnrolled,
     detectSingleFace,
-    identifyFace,
     FaceServiceError,
 } from "../services/faceService.js";
 import ensureDatabaseConnected from "../db/init.js";
@@ -19,7 +16,7 @@ const ALLOWED_MIME_TYPES = ["image/jpeg", "image/png", "image/bmp", "image/gif"]
 
 const upload = multer({
     storage: multer.memoryStorage(),
-    limits: { fileSize: 10 * 1024 * 1024 }, // Azure Face API limit: 10 MB per image
+    limits: { fileSize: 10 * 1024 * 1024 },
     fileFilter: (_req, file, cb) => {
         if (ALLOWED_MIME_TYPES.includes(file.mimetype)) {
             cb(null, true);
@@ -70,31 +67,20 @@ router.post("/enroll", upload.array("images"), async (req, res) => {
             return;
         }
 
-        // ── Azure: ensure group exists ──
-        await ensurePersonGroup();
-
-        // ── Azure: create person ──
-        const azurePersonId = await createPerson(name.trim());
-        console.log(`Created Azure Person: ${azurePersonId} for name: ${name.trim()}`);
-
-        // ── Azure: add each face ──
-        const persistedFaceIds: string[] = [];
-        for (const file of files) {
-            const persistedFaceId = await addFaceToPerson(azurePersonId, file.buffer);
-            persistedFaceIds.push(persistedFaceId);
-            console.log(`Added face ${persistedFaceId} to person ${azurePersonId}`);
-        }
-
-        // ── Azure: train the group ──
-        await trainPersonGroup();
-
-        // ── Database: persist user ──
+        // ── Database: persist user first to get an ID ──
         await ensureDatabaseConnected();
         const person = await Person.create({
             name: name.trim(),
-            azurePersonId,
             enrolledAt: new Date(),
         });
+
+        const personId = person._id!.toString();
+        console.log(`Created person: ${personId} for name: ${name.trim()}`);
+
+        // ── AWS: validate faces & upload to S3 ──
+        const imageBuffers = files.map((f) => f.buffer);
+        const uploadedKeys = await enrollFace(personId, imageBuffers);
+        console.log(`Enrolled ${uploadedKeys.length} face(s) for person ${personId}`);
 
         res.status(201).json({
             success: true,
@@ -102,9 +88,8 @@ router.post("/enroll", upload.array("images"), async (req, res) => {
             data: {
                 personId: person._id,
                 name: person.name,
-                azurePersonId: person.azurePersonId,
                 enrolledAt: person.enrolledAt,
-                facesAdded: persistedFaceIds.length,
+                facesAdded: uploadedKeys.length,
             },
         });
     } catch (error) {
@@ -134,13 +119,13 @@ router.post("/verify", upload.single("image"), async (req, res) => {
             return;
         }
 
-        // ── Azure: detect face ──
-        const faceId = await detectSingleFace(file.buffer);
+        // ── AWS Rekognition: detect that exactly one face exists ──
+        await detectSingleFace(file.buffer);
 
-        // ── Azure: identify against group ──
-        const candidate = await identifyFace(faceId);
+        // ── AWS Rekognition: compare against all enrolled faces ──
+        const match = await compareFaceAgainstEnrolled(file.buffer);
 
-        if (!candidate) {
+        if (!match) {
             res.status(404).json({
                 success: false,
                 code: "UNKNOWN_FACE",
@@ -151,13 +136,13 @@ router.post("/verify", upload.single("image"), async (req, res) => {
 
         // ── Database: look up local user ──
         await ensureDatabaseConnected();
-        const person = await Person.findOne({ azurePersonId: candidate.personId });
+        const person = await Person.findById(match.personId);
 
         if (!person) {
             res.status(404).json({
                 success: false,
                 code: "USER_NOT_FOUND",
-                message: "Matched an Azure person but no corresponding local record found",
+                message: "Matched faces but no corresponding local record found",
             });
             return;
         }
@@ -168,9 +153,8 @@ router.post("/verify", upload.single("image"), async (req, res) => {
             data: {
                 personId: person._id,
                 name: person.name,
-                azurePersonId: person.azurePersonId,
                 enrolledAt: person.enrolledAt,
-                confidence: candidate.confidence,
+                confidence: match.confidence,
             },
         });
     } catch (error) {
