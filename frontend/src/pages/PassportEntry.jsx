@@ -13,6 +13,7 @@ import { Command, CommandInput, CommandList, CommandEmpty, CommandGroup, Command
 import { Calendar } from '@/components/ui/calendar';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
+import { checkPassenger } from '@/api';
 
 const PRESET_USERS = [
   { fullName: 'Ples Alexandru-Nicusor', passportNumber: 'R14827365', nationality: 'Romania', expiryDate: new Date('2029-08-15') },
@@ -52,6 +53,8 @@ export default function PassportEntry() {
   });
 
   const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [alreadyCheckedIn, setAlreadyCheckedIn] = useState(false);
+  const [checking, setChecking] = useState(false);
 
   const handleUserSelect = (user) => {
     setSelectedUser(user.fullName);
@@ -62,16 +65,33 @@ export default function PassportEntry() {
       expiryDate: user.expiryDate,
     });
     setUserDropdownOpen(false);
+    setAlreadyCheckedIn(false);
   };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
+    if (name === 'passportNumber') setAlreadyCheckedIn(false);
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    setShowSuccessModal(true);
+    if (!formData.passportNumber) return;
+
+    setChecking(true);
+    setAlreadyCheckedIn(false);
+    try {
+      const result = await checkPassenger(formData.passportNumber);
+      if (result.exists) {
+        setAlreadyCheckedIn(true);
+        return;
+      }
+      setShowSuccessModal(true);
+    } catch {
+      setShowSuccessModal(true);
+    } finally {
+      setChecking(false);
+    }
   };
 
   const mergedUserData = { ...formData, ...SHARED_FLIGHT, expiryDate: formData.expiryDate ? format(formData.expiryDate, 'yyyy-MM-dd') : '' };
@@ -86,179 +106,186 @@ export default function PassportEntry() {
       animate={{ opacity: 1, x: 0 }}
       exit={{ opacity: 0, x: -50 }}
       transition={{ duration: 0.5, ease: "easeOut" }}
-      className="p-6 flex flex-col h-full bg-background"
+      className="p-6 flex flex-col h-full md:py-12 md:max-w-lg md:mx-auto"
     >
-      <div className="mt-6 mb-6">
-        <h1 className="text-2xl font-bold text-foreground">
-          Online Check-in
-        </h1>
-        <p className="text-muted-foreground text-sm mt-1">
-          Enter your details to check in for your flight
-        </p>
+      <div className="flex-1 w-full max-w-sm mx-auto sm:bg-card sm:border sm:border-border sm:rounded-2xl sm:shadow-sm sm:p-6 sm:flex-initial">
+        <div className="mb-6">
+          <h1 className="text-2xl font-bold text-foreground">
+            Online Check-in
+          </h1>
+          <p className="text-muted-foreground text-sm mt-1">
+            Enter your details to check in for your flight
+          </p>
+        </div>
+        <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+          <div className="space-y-1.5">
+            <Label>Passenger</Label>
+            <Popover open={userDropdownOpen} onOpenChange={setUserDropdownOpen}>
+              <PopoverTrigger asChild>
+                <button
+                  type="button"
+                  role="combobox"
+                  aria-expanded={userDropdownOpen}
+                  className={cn(
+                    "flex h-12 w-full items-center justify-between rounded-xl border border-input bg-white px-4 py-3.5 text-sm transition-colors",
+                    selectedUser ? "text-foreground" : "text-muted-foreground"
+                  )}
+                >
+                  <span className="flex items-center gap-2 truncate">
+                    <UserRound className="h-4 w-4 text-primary shrink-0" />
+                    {selectedUser || "Select passenger"}
+                  </span>
+                  <ChevronDown className={cn("ml-2 h-4 w-4 shrink-0 text-muted-foreground transition-transform", userDropdownOpen && "rotate-180")} />
+                </button>
+              </PopoverTrigger>
+              <PopoverContent className="p-0 overflow-hidden" align="start" style={{ width: 'var(--radix-popover-trigger-width)' }}>
+                <Command className="w-full">
+                  <CommandList>
+                    <CommandGroup>
+                      {PRESET_USERS.map((user) => (
+                        <CommandItem
+                          key={user.fullName}
+                          value={user.fullName}
+                          onSelect={() => handleUserSelect(user)}
+                        >
+                          <UserRound className="h-4 w-4 text-primary mr-2 shrink-0" />
+                          <span className="text-sm truncate">{user.fullName}</span>
+                          {selectedUser === user.fullName && (
+                            <Check className="ml-auto h-4 w-4 text-primary shrink-0" />
+                          )}
+                        </CommandItem>
+                      ))}
+                    </CommandGroup>
+                  </CommandList>
+                </Command>
+              </PopoverContent>
+            </Popover>
+          </div>
+
+          <div className="space-y-1.5">
+            <Label>Full Legal Name</Label>
+            <Input
+              name="fullName"
+              value={formData.fullName}
+              onChange={handleChange}
+              placeholder="JOHN DOE"
+              required
+            />
+          </div>
+
+          <div className="space-y-1.5">
+            <Label>Passport Number</Label>
+            <Input
+              name="passportNumber"
+              value={formData.passportNumber}
+              onChange={handleChange}
+              placeholder="A12345678"
+              required
+            />
+          </div>
+
+          <div className="space-y-1.5">
+            <Label>Nationality</Label>
+            <Popover open={comboboxOpen} onOpenChange={setComboboxOpen}>
+              <PopoverTrigger asChild>
+                <button
+                  type="button"
+                  role="combobox"
+                  aria-expanded={comboboxOpen}
+                  className={cn(
+                    "flex h-12 w-full items-center justify-between rounded-xl border border-input bg-white px-4 py-3.5 text-sm transition-colors",
+                    formData.nationality ? "text-foreground" : "text-muted-foreground"
+                  )}
+                >
+                  <span className="truncate">
+                    {formData.nationality
+                      ? `${sortedCountries?.find(c => c.name.common === formData.nationality)?.flag || ''} ${formData.nationality}`
+                      : "Select Country"}
+                  </span>
+                  <ChevronDown className={cn("ml-2 h-4 w-4 shrink-0 text-muted-foreground transition-transform", comboboxOpen && "rotate-180")} />
+                </button>
+              </PopoverTrigger>
+              <PopoverContent className="p-0 overflow-hidden" align="start" style={{ width: 'var(--radix-popover-trigger-width)' }}>
+                <Command className="w-full">
+                  <CommandInput placeholder="Search country..." />
+                  <CommandList>
+                    <CommandEmpty>No country found.</CommandEmpty>
+                    <CommandGroup>
+                      {sortedCountries?.map((country) => (
+                        <CommandItem
+                          key={country.name.common}
+                          value={country.name.common}
+                          onSelect={(value) => {
+                            setFormData(prev => ({ ...prev, nationality: value }));
+                            setComboboxOpen(false);
+                          }}
+                        >
+                          <span className="text-xl">{country.flag}</span>
+                          <span className="text-sm truncate">{country.name.common}</span>
+                          {formData.nationality === country.name.common && (
+                            <Check className="ml-auto h-4 w-4 text-primary shrink-0" />
+                          )}
+                        </CommandItem>
+                      ))}
+                    </CommandGroup>
+                  </CommandList>
+                </Command>
+              </PopoverContent>
+            </Popover>
+          </div>
+
+          <div className="space-y-1.5">
+            <Label>Expiry Date</Label>
+            <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
+              <PopoverTrigger asChild>
+                <button
+                  type="button"
+                  className={cn(
+                    "flex h-12 w-full items-center rounded-xl border border-input bg-white px-4 py-3.5 text-sm transition-colors",
+                    formData.expiryDate ? "text-foreground" : "text-muted-foreground"
+                  )}
+                >
+                  <CalendarIcon className="mr-3 h-4 w-4 text-primary" />
+                  {formData.expiryDate ? format(formData.expiryDate, "PPP") : "Select expiry date"}
+                </button>
+              </PopoverTrigger>
+              <PopoverContent className="p-0 overflow-hidden" align="start" style={{ width: 'var(--radix-popover-trigger-width)' }}>
+                <Calendar
+                  mode="single"
+                  selected={formData.expiryDate}
+                  onSelect={(date) => {
+                    setFormData(prev => ({ ...prev, expiryDate: date }));
+                    setCalendarOpen(false);
+                  }}
+                  disabled={(date) => date < new Date()}
+                  initialFocus
+                />
+              </PopoverContent>
+            </Popover>
+          </div>
+
+          {alreadyCheckedIn && (
+            <p className="text-sm text-amber-600 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 text-center">
+              This passport is already checked in.
+            </p>
+          )}
+
+          <div className="pt-4 pb-4 sm:pb-0">
+            <Button
+              type="submit"
+              disabled={!isFormValid || checking}
+              variant={isFormValid ? "default" : "secondary"}
+              size="lg"
+              className="w-full py-4 group"
+              asChild
+            >
+              <motion.button whileTap={{ scale: 0.96 }}>
+                {checking ? 'Checking...' : 'Check In'}
+              </motion.button>
+            </Button>
+          </div>
+        </form>
       </div>
-
-      <form onSubmit={handleSubmit} className="flex flex-col gap-5 flex-1 w-full max-w-sm mx-auto">
-        <div className="space-y-1.5">
-          <Label>Passenger</Label>
-          <Popover open={userDropdownOpen} onOpenChange={setUserDropdownOpen}>
-            <PopoverTrigger asChild>
-              <button
-                type="button"
-                role="combobox"
-                aria-expanded={userDropdownOpen}
-                className={cn(
-                  "flex h-12 w-full items-center justify-between rounded-xl border border-input bg-white px-4 py-3.5 text-sm transition-colors",
-                  selectedUser ? "text-foreground" : "text-muted-foreground"
-                )}
-              >
-                <span className="flex items-center gap-2 truncate">
-                  <UserRound className="h-4 w-4 text-primary shrink-0" />
-                  {selectedUser || "Select passenger"}
-                </span>
-                <ChevronDown className={cn("ml-2 h-4 w-4 shrink-0 text-muted-foreground transition-transform", userDropdownOpen && "rotate-180")} />
-              </button>
-            </PopoverTrigger>
-            <PopoverContent className="p-0 overflow-hidden" align="start" style={{ width: 'var(--radix-popover-trigger-width)' }}>
-              <Command className="w-full">
-                <CommandList>
-                  <CommandGroup>
-                    {PRESET_USERS.map((user) => (
-                      <CommandItem
-                        key={user.fullName}
-                        value={user.fullName}
-                        onSelect={() => handleUserSelect(user)}
-                      >
-                        <UserRound className="h-4 w-4 text-primary mr-2 shrink-0" />
-                        <span className="text-sm truncate">{user.fullName}</span>
-                        {selectedUser === user.fullName && (
-                          <Check className="ml-auto h-4 w-4 text-primary shrink-0" />
-                        )}
-                      </CommandItem>
-                    ))}
-                  </CommandGroup>
-                </CommandList>
-              </Command>
-            </PopoverContent>
-          </Popover>
-        </div>
-
-        <div className="space-y-1.5">
-          <Label>Full Legal Name</Label>
-          <Input
-            name="fullName"
-            value={formData.fullName}
-            onChange={handleChange}
-            placeholder="JOHN DOE"
-            required
-          />
-        </div>
-
-        <div className="space-y-1.5">
-          <Label>Passport Number</Label>
-          <Input
-            name="passportNumber"
-            value={formData.passportNumber}
-            onChange={handleChange}
-            placeholder="A12345678"
-            required
-          />
-        </div>
-
-        <div className="space-y-1.5">
-          <Label>Nationality</Label>
-          <Popover open={comboboxOpen} onOpenChange={setComboboxOpen}>
-            <PopoverTrigger asChild>
-              <button
-                type="button"
-                role="combobox"
-                aria-expanded={comboboxOpen}
-                className={cn(
-                  "flex h-12 w-full items-center justify-between rounded-xl border border-input bg-white px-4 py-3.5 text-sm transition-colors",
-                  formData.nationality ? "text-foreground" : "text-muted-foreground"
-                )}
-              >
-                <span className="truncate">
-                  {formData.nationality
-                    ? `${sortedCountries?.find(c => c.name.common === formData.nationality)?.flag || ''} ${formData.nationality}`
-                    : "Select Country"}
-                </span>
-                <ChevronDown className={cn("ml-2 h-4 w-4 shrink-0 text-muted-foreground transition-transform", comboboxOpen && "rotate-180")} />
-              </button>
-            </PopoverTrigger>
-            <PopoverContent className="p-0 overflow-hidden" align="start" style={{ width: 'var(--radix-popover-trigger-width)' }}>
-              <Command className="w-full">
-                <CommandInput placeholder="Search country..." />
-                <CommandList>
-                  <CommandEmpty>No country found.</CommandEmpty>
-                  <CommandGroup>
-                    {sortedCountries?.map((country) => (
-                      <CommandItem
-                        key={country.name.common}
-                        value={country.name.common}
-                        onSelect={(value) => {
-                          setFormData(prev => ({ ...prev, nationality: value }));
-                          setComboboxOpen(false);
-                        }}
-                      >
-                        <span className="text-xl">{country.flag}</span>
-                        <span className="text-sm truncate">{country.name.common}</span>
-                        {formData.nationality === country.name.common && (
-                          <Check className="ml-auto h-4 w-4 text-primary shrink-0" />
-                        )}
-                      </CommandItem>
-                    ))}
-                  </CommandGroup>
-                </CommandList>
-              </Command>
-            </PopoverContent>
-          </Popover>
-        </div>
-
-        <div className="space-y-1.5">
-          <Label>Expiry Date</Label>
-          <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
-            <PopoverTrigger asChild>
-              <button
-                type="button"
-                className={cn(
-                  "flex h-12 w-full items-center rounded-xl border border-input bg-white px-4 py-3.5 text-sm transition-colors",
-                  formData.expiryDate ? "text-foreground" : "text-muted-foreground"
-                )}
-              >
-                <CalendarIcon className="mr-3 h-4 w-4 text-primary" />
-                {formData.expiryDate ? format(formData.expiryDate, "PPP") : "Select expiry date"}
-              </button>
-            </PopoverTrigger>
-            <PopoverContent className="p-0 overflow-hidden" align="start" style={{ width: 'var(--radix-popover-trigger-width)' }}>
-              <Calendar
-                mode="single"
-                selected={formData.expiryDate}
-                onSelect={(date) => {
-                  setFormData(prev => ({ ...prev, expiryDate: date }));
-                  setCalendarOpen(false);
-                }}
-                disabled={(date) => date < new Date()}
-                initialFocus
-              />
-            </PopoverContent>
-          </Popover>
-        </div>
-
-        <div className="pt-6 pb-4">
-          <Button
-            type="submit"
-            disabled={!isFormValid}
-            variant={isFormValid ? "default" : "secondary"}
-            size="lg"
-            className="w-full py-4 group"
-            asChild
-          >
-            <motion.button whileTap={{ scale: 0.96 }}>
-              Check In
-            </motion.button>
-          </Button>
-        </div>
-      </form>
       <Dialog open={showSuccessModal} onOpenChange={setShowSuccessModal}>
         <DialogContent className="w-[calc(100%-2rem)] max-w-sm mx-auto rounded-2xl">
           <DialogHeader className="items-center text-center">

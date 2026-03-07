@@ -1,5 +1,15 @@
 import mongoose from "mongoose";
 
+enum PersonStatus {
+    CHECKED_IN = "checked-in",
+    SECURITY_SCREENING = "security-screening",
+    SECURITY_CLEARED = "security-cleared",
+    AT_GATE = "at-gate",
+    BOARDING = "boarding",
+    BOARDED = "boarded",
+    FLAGGED = "flagged",
+}
+
 const personSchema = new mongoose.Schema({
     _id: { type: mongoose.SchemaTypes.ObjectId, auto: true },
     name: { type: String, required: true },
@@ -15,15 +25,7 @@ const personSchema = new mongoose.Schema({
     boardingTime: { type: Date, default: null },
     status: {
         type: String,
-        enum: [
-            "checked-in",
-            "security-screening",
-            "security-cleared",
-            "at-gate",
-            "boarding",
-            "boarded",
-            "flagged",
-        ],
+        enum: Object.values(PersonStatus),
         default: "checked-in",
     },
     verificationScore: { type: Number, default: null },
@@ -36,3 +38,4 @@ const personSchema = new mongoose.Schema({
 });
 
 export default mongoose.model("Person", personSchema, "person");
+export { PersonStatus };

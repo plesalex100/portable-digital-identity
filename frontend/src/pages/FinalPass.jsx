@@ -13,7 +13,7 @@ export default function FinalPass() {
       initial={{ opacity: 0, y: 50 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.6, ease: "easeOut" }}
-      className="flex flex-col h-full bg-background px-5 py-8 overflow-y-auto"
+      className="flex flex-col h-full bg-background px-5 py-8 overflow-y-auto sm:bg-card sm:border sm:border-border sm:rounded-2xl sm:shadow-sm sm:max-w-lg sm:mx-auto sm:my-12 sm:h-auto"
     >
       <div className="text-center mb-6 flex flex-col items-center w-full">
         <Badge variant="success" className="mb-3">

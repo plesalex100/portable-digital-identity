@@ -8,7 +8,7 @@ import {
     FaceServiceError,
 } from "../services/faceService.js";
 import ensureDatabaseConnected from "../db/init.js";
-import Person from "../models/Person.js";
+import Person, { PersonStatus } from "../models/Person.js";
 
 const router = Router();
 
@@ -44,7 +44,7 @@ router.get("/health", (_req, res) => {
 
 router.post("/enroll", upload.array("images"), async (req, res) => {
     try {
-        const { name } = req.body as { name?: string };
+        const { name, passportNumber, nationality, flightNumber, airline, departure, arrival, gate } = req.body as Record<string, string | undefined>;
 
         // ── Input validation ──
         if (!name || typeof name !== "string" || name.trim().length === 0) {
@@ -67,11 +67,36 @@ router.post("/enroll", upload.array("images"), async (req, res) => {
             return;
         }
 
-        // ── Database: persist user first to get an ID ──
+        // ── Database: check for duplicate check-in ──
         await ensureDatabaseConnected();
+
+        if (passportNumber) {
+            const existing = await Person.findOne({ passportNumber: passportNumber.trim() });
+            if (existing) {
+                res.status(409).json({
+                    success: false,
+                    code: "ALREADY_CHECKED_IN",
+                    message: `Passenger with passport ${passportNumber} is already checked in`,
+                    data: {
+                        personId: existing._id,
+                        name: existing.name,
+                        status: existing.status,
+                    },
+                });
+                return;
+            }
+        }
+
         const person = await Person.create({
             name: name.trim(),
             enrolledAt: new Date(),
+            passportNumber: passportNumber?.trim() || null,
+            nationality: nationality?.trim() || null,
+            flightNumber: flightNumber?.trim() || null,
+            airline: airline?.trim() || null,
+            departure: departure?.trim() || null,
+            arrival: arrival?.trim() || null,
+            gate: gate?.trim() || null,
         });
 
         const personId = person._id!.toString();
@@ -110,12 +135,37 @@ router.post("/enroll", upload.array("images"), async (req, res) => {
 //   - image: File (single, required)
 // ──────────────────────────────────────────────
 
+// Checkpoint flow: each checkpoint requires a minimum status and advances to a new status
+const CHECKPOINT_FLOW: Record<string, { requiredStatuses: string[]; nextStatus: PersonStatus; label: string }> = {
+    security:     { requiredStatuses: ["checked-in"],       nextStatus: PersonStatus.SECURITY_CLEARED, label: "Security Checkpoint" },
+    immigration:  { requiredStatuses: ["security-cleared"], nextStatus: PersonStatus.AT_GATE,          label: "Immigration Control" },
+    boarding:     { requiredStatuses: ["at-gate"],          nextStatus: PersonStatus.BOARDED,           label: "Boarding Gate" },
+    lounge:       { requiredStatuses: ["security-cleared", "at-gate"], nextStatus: PersonStatus.FLAGGED,       label: "Lounge Access" },
+};
+
+const STATUS_LABELS: Record<string, string> = {
+    "checked-in":        "Checked In",
+    "security-screening":"Security Screening",
+    "security-cleared":  "Security Cleared",
+    "at-gate":           "At Gate",
+    "boarding":          "Boarding",
+    "boarded":           "Boarded",
+    "flagged":           "Flagged",
+};
+
 router.post("/verify", upload.single("image"), async (req, res) => {
     try {
         const file = req.file;
+        const checkpoint = (req.body as { checkpoint?: string }).checkpoint || "security";
 
         if (!file) {
             res.status(400).json({ success: false, message: "An image file is required (field 'image')" });
+            return;
+        }
+
+        const flow = CHECKPOINT_FLOW[checkpoint];
+        if (!flow) {
+            res.status(400).json({ success: false, message: `Unknown checkpoint: ${checkpoint}` });
             return;
         }
 
@@ -147,6 +197,33 @@ router.post("/verify", upload.single("image"), async (req, res) => {
             return;
         }
 
+        // ── Enforce checkpoint order ──
+        const currentStatus = person.status || "checked-in";
+        if (!flow.requiredStatuses.includes(currentStatus)) {
+            res.status(403).json({
+                success: false,
+                code: "WRONG_CHECKPOINT_ORDER",
+                message: `Cannot use ${flow.label} — passenger status is "${STATUS_LABELS[currentStatus] || currentStatus}"`,
+                data: {
+                    personId: person._id,
+                    name: person.name,
+                    currentStatus,
+                    currentStatusLabel: STATUS_LABELS[currentStatus] || currentStatus,
+                    requiredStatuses: flow.requiredStatuses,
+                    checkpoint,
+                    confidence: match.confidence,
+                },
+            });
+            return;
+        }
+
+        // ── Update status if checkpoint advances it ──
+        if (flow.nextStatus) {
+            person.status = flow.nextStatus;
+            person.verificationScore = match.confidence;
+            await person.save();
+        }
+
         res.json({
             success: true,
             message: "Person verified successfully",
@@ -155,6 +232,10 @@ router.post("/verify", upload.single("image"), async (req, res) => {
                 name: person.name,
                 enrolledAt: person.enrolledAt,
                 confidence: match.confidence,
+                status: person.status,
+                statusLabel: STATUS_LABELS[person.status || ""] || person.status,
+                checkpoint,
+                checkpointLabel: flow.label,
             },
         });
     } catch (error) {

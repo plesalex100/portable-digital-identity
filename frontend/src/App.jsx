@@ -42,7 +42,7 @@ export default function App() {
   return (
     <div className="min-h-screen bg-slate-100 sm:bg-slate-200 flex justify-center text-foreground font-sans selection:bg-primary/20">
       {/* Mobile App Viewport */}
-      <div className="w-full max-w-md bg-background h-[100dvh] relative shadow-xl flex flex-col overflow-hidden sm:border-x sm:border-slate-200">
+      <div className="w-full h-[100dvh] relative shadow-xl flex flex-col overflow-hidden sm:border-x sm:border-slate-200">
 
         <main className="flex-1 overflow-x-hidden overflow-y-auto scroll-smooth no-scrollbar relative w-full h-full">
           <AnimatedRoutes />

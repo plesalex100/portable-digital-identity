@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ShieldCheck, ShieldAlert, ScanFace, RotateCcw } from 'lucide-react';
+import { ShieldCheck, ShieldAlert, ScanFace, RotateCcw, AlertTriangle } from 'lucide-react';
 import { verifyFace } from '../api';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
 
@@ -17,10 +17,11 @@ export default function Verification() {
   const streamRef = useRef(null);
 
   const [checkpoint, setCheckpoint] = useState(CHECKPOINTS[0]);
-  const [stage, setStage] = useState('ready'); // ready | scanning | verified | rejected | error
+  const [stage, setStage] = useState('ready'); // ready | scanning | verified | rejected | wrong-order | error
   const [cameraReady, setCameraReady] = useState(false);
   const [result, setResult] = useState(null);
   const [errorMsg, setErrorMsg] = useState('');
+  const [wrongOrderData, setWrongOrderData] = useState(null);
 
   const stopCamera = useCallback(() => {
     if (streamRef.current) {
@@ -71,18 +72,23 @@ export default function Verification() {
     setStage('scanning');
     setResult(null);
     setErrorMsg('');
+    setWrongOrderData(null);
 
     try {
       const blob = await capturePhoto();
       if (!blob) throw new Error('Failed to capture photo');
 
-      const data = await verifyFace(blob);
+      const data = await verifyFace(blob, checkpoint.id);
 
       setResult(data.data);
       setStage('verified');
     } catch (err) {
       const msg = err.message || 'Verification failed';
-      if (msg.includes('No matching person') || msg.includes('UNKNOWN_FACE')) {
+      if (err.code === 'WRONG_CHECKPOINT_ORDER') {
+        setStage('wrong-order');
+        setWrongOrderData(err.data);
+        setErrorMsg(msg);
+      } else if (msg.includes('No matching person') || msg.includes('UNKNOWN_FACE') || err.code === 'UNKNOWN_FACE') {
         setStage('rejected');
         setErrorMsg('Identity not recognized');
       } else {
@@ -99,9 +105,9 @@ export default function Verification() {
     return () => clearTimeout(timer);
   }, [stage, cameraReady]);
 
-  // Auto-restart after 5s when verified or rejected
+  // Auto-restart after 5s when verified, rejected, or wrong-order
   useEffect(() => {
-    if (stage !== 'verified' && stage !== 'rejected') return;
+    if (stage !== 'verified' && stage !== 'rejected' && stage !== 'wrong-order') return;
     const timer = setTimeout(() => handleReset(), 5000);
     return () => clearTimeout(timer);
   }, [stage]);
@@ -118,6 +124,7 @@ export default function Verification() {
     scanning: 'cyan',
     verified: 'emerald',
     rejected: 'red',
+    'wrong-order': 'amber',
     error: 'red',
   }[stage];
 
@@ -134,6 +141,8 @@ export default function Verification() {
           <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-[10px] font-bold ${
             stage === 'verified'
               ? 'bg-emerald-50 text-emerald-600 border-emerald-200'
+              : stage === 'wrong-order'
+              ? 'bg-amber-50 text-amber-600 border-amber-200'
               : stage === 'rejected' || stage === 'error'
               ? 'bg-red-50 text-red-600 border-red-200'
               : 'bg-sky-50 text-primary border-sky-200'
@@ -144,6 +153,7 @@ export default function Verification() {
             {stage === 'ready' && 'Standby'}
             {stage === 'scanning' && 'Scanning'}
             {stage === 'verified' && 'Cleared'}
+            {stage === 'wrong-order' && 'Wrong Step'}
             {stage === 'rejected' && 'Denied'}
             {stage === 'error' && 'Error'}
           </div>
@@ -194,22 +204,24 @@ export default function Verification() {
 
           {/* Result overlay */}
           <AnimatePresence>
-            {(stage === 'verified' || stage === 'rejected') && (
+            {(stage === 'verified' || stage === 'rejected' || stage === 'wrong-order') && (
               <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
                 className={`absolute inset-0 z-20 flex flex-col items-center justify-center gap-3 ${
-                  stage === 'verified' ? 'bg-green-500/80' : 'bg-red-500/80'
+                  stage === 'verified' ? 'bg-green-500/80' : stage === 'wrong-order' ? 'bg-amber-500/80' : 'bg-red-500/80'
                 }`}
               >
                 {stage === 'verified' ? (
                   <ShieldCheck className="w-16 h-16 text-white" strokeWidth={1.5} />
+                ) : stage === 'wrong-order' ? (
+                  <AlertTriangle className="w-16 h-16 text-white" strokeWidth={1.5} />
                 ) : (
                   <ShieldAlert className="w-16 h-16 text-white" strokeWidth={1.5} />
                 )}
                 <span className="text-sm font-bold text-white">
-                  {stage === 'verified' ? 'Identity Confirmed' : 'Access Denied'}
+                  {stage === 'verified' ? 'Identity Confirmed' : stage === 'wrong-order' ? 'Wrong Checkpoint' : 'Access Denied'}
                 </span>
               </motion.div>
             )}
@@ -255,6 +267,40 @@ export default function Verification() {
             </motion.div>
           )}
 
+          {stage === 'wrong-order' && wrongOrderData && (
+            <motion.div
+              key="wrong-order"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              className="mt-5 w-full max-w-[300px] bg-card border border-amber-200 rounded-xl p-4 space-y-3 shadow-sm"
+            >
+              <div className="flex justify-between items-center">
+                <div className="text-xs text-muted-foreground">Passenger</div>
+                <div className="text-sm text-foreground font-medium">{wrongOrderData.name}</div>
+              </div>
+              <div className="flex justify-between items-center">
+                <div className="text-xs text-muted-foreground">Current Status</div>
+                <div className="text-xs font-medium text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full">{wrongOrderData.currentStatusLabel}</div>
+              </div>
+              <div className="flex justify-between items-center">
+                <div className="text-xs text-muted-foreground">Confidence</div>
+                <div className="flex items-center gap-2">
+                  <div className="w-16 h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                    <div
+                      className="h-full rounded-full bg-amber-400"
+                      style={{ width: `${wrongOrderData.confidence}%` }}
+                    />
+                  </div>
+                  <span className="text-xs text-amber-600 font-bold">{wrongOrderData.confidence?.toFixed(1)}%</span>
+                </div>
+              </div>
+              <p className="text-xs text-amber-600 text-center pt-1">
+                Please complete the previous checkpoint first
+              </p>
+            </motion.div>
+          )}
+
           {(stage === 'rejected' || stage === 'error') && (
             <motion.div
               key="error"
@@ -281,6 +327,7 @@ export default function Verification() {
           </span>
         )}
         {stage === 'verified' && 'Verified — next passenger in a moment...'}
+        {stage === 'wrong-order' && 'Wrong checkpoint — retrying shortly...'}
         {stage === 'rejected' && 'Not recognized — retrying shortly...'}
         {stage === 'error' && 'Something went wrong — retrying...'}
       </div>

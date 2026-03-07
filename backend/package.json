@@ -8,7 +8,9 @@
     "dev": "tsx --watch index.ts",
     "build": "tsc --noEmit",
     "start": "tsx index.ts",
-    "seed": "tsx seed.ts"
+    "seed": "tsx seed.ts",
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit"
   },
   "keywords": [],
   "author": "",
@@ -25,11 +27,15 @@
     "nodemon": "^3.1.14"
   },
   "devDependencies": {
+    "@eslint/js": "^9.39.4",
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.6",
     "@types/multer": "^2.1.0",
     "@types/node": "^25.3.5",
+    "eslint": "^9.39.4",
+    "globals": "^16.5.0",
     "tsx": "^4.21.0",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.56.1"
   }
 }

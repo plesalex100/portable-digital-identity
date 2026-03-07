@@ -16,4 +16,20 @@ router.get("/", async (_req, res) => {
     }
 });
 
+// GET /api/passengers/check/:passportNumber
+router.get("/check/:passportNumber", async (req, res) => {
+    try {
+        await ensureDatabaseConnected();
+        const person = await Person.findOne({ passportNumber: req.params.passportNumber });
+        if (person) {
+            res.json({ success: true, exists: true, data: { personId: person._id, name: person.name, status: person.status } });
+        } else {
+            res.json({ success: true, exists: false });
+        }
+    } catch (error) {
+        console.error("Passenger check error:", (error as Error).message);
+        res.status(500).json({ success: false, message: "Failed to check passenger" });
+    }
+});
+
 export default router;

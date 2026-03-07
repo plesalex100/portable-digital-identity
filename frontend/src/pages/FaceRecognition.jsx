@@ -25,6 +25,7 @@ export default function FaceRecognition() {
     hashing: { text: 'Processing...', color: 'text-primary' },
     complete: { text: 'Biometric pass created!', color: 'text-emerald-600' },
     error: { text: 'Enrollment failed', color: 'text-red-500' },
+    duplicate: { text: 'Already checked in', color: 'text-amber-500' },
   };
 
   const stopCamera = useCallback(() => {
@@ -107,7 +108,7 @@ export default function FaceRecognition() {
           try {
             const blob = await capturePhoto();
             if (!blob) throw new Error('Failed to capture photo');
-            await enrollFace(userData.fullName, blob);
+            await enrollFace(userData, blob);
             setProgress(100);
             setScanStage('complete');
             stopCamera();
@@ -116,6 +117,15 @@ export default function FaceRecognition() {
             }, 1000);
           } catch (err) {
             console.error('Enrollment failed:', err);
+            if (err.code === 'ALREADY_CHECKED_IN') {
+              setErrorMsg(err.message || 'This passenger is already checked in');
+              setScanStage('duplicate');
+              stopCamera();
+              setTimeout(() => {
+                navigate('/pass', { state: { userData } });
+              }, 2000);
+              return;
+            }
             setErrorMsg(err.message || 'Enrollment failed');
             setScanStage('error');
             stopCamera();
@@ -136,7 +146,7 @@ export default function FaceRecognition() {
       animate={{ opacity: 1 }}
       exit={{ opacity: 0, scale: 0.95 }}
       transition={{ duration: 0.6 }}
-      className="flex flex-col items-center justify-center h-full bg-background px-6"
+      className="flex flex-col items-center justify-center h-full bg-background px-6 sm:bg-card sm:border sm:border-border sm:rounded-2xl sm:shadow-sm sm:max-w-lg sm:mx-auto sm:my-12 sm:h-auto sm:py-12"
     >
       <canvas ref={canvasRef} className="hidden" />
 
@@ -156,7 +166,7 @@ export default function FaceRecognition() {
 
         {/* Glow Effects */}
         <div className={`absolute inset-0 rounded-full blur-2xl opacity-20 transition-colors duration-1000 ${
-          scanStage === 'complete' ? 'bg-emerald-500' : scanStage === 'error' ? 'bg-red-500' : 'bg-primary'
+          scanStage === 'complete' ? 'bg-emerald-500' : scanStage === 'error' ? 'bg-red-500' : scanStage === 'duplicate' ? 'bg-amber-500' : 'bg-primary'
         }`}></div>
 
         {/* Outer Progress Ring SVG */}
@@ -167,7 +177,7 @@ export default function FaceRecognition() {
           />
           <circle
             cx="150" cy="150" r="120"
-            stroke={scanStage === 'complete' ? '#22c55e' : scanStage === 'error' ? '#f87171' : '#0ea5e9'}
+            stroke={scanStage === 'complete' ? '#22c55e' : scanStage === 'error' ? '#f87171' : scanStage === 'duplicate' ? '#f59e0b' : '#0ea5e9'}
             strokeWidth="6"
             fill="none"
             strokeLinecap="round"
@@ -193,7 +203,7 @@ export default function FaceRecognition() {
           />
 
           {/* Animated Scanning Line */}
-          {scanStage !== 'idle' && scanStage !== 'complete' && scanStage !== 'error' && (
+          {scanStage !== 'idle' && scanStage !== 'complete' && scanStage !== 'error' && scanStage !== 'duplicate' && (
             <motion.div
               animate={{ y: ["-100%", "300%", "-100%"] }}
               transition={{ duration: 2.5, ease: "linear", repeat: Infinity }}
@@ -210,7 +220,12 @@ export default function FaceRecognition() {
       </div>
 
       <div className="absolute bottom-12 w-full px-8 text-center">
-        {scanStage === 'error' ? (
+        {scanStage === 'duplicate' ? (
+          <div className="space-y-2">
+            <p className="text-sm text-amber-500 font-medium">{errorMsg}</p>
+            <p className="text-xs text-muted-foreground">Redirecting to your boarding pass...</p>
+          </div>
+        ) : scanStage === 'error' ? (
           <div className="space-y-3">
             <p className="text-sm text-red-500">{errorMsg}</p>
             <Button
