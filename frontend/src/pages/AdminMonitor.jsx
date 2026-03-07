@@ -11,7 +11,7 @@ export default function AdminMonitor() {
     <div className="flex flex-col space-y-6 w-full pb-8">
       <div className="flex flex-col space-y-2 border-b border-slate-800 pb-4">
         <h1 className="text-2xl font-black uppercase tracking-widest text-white">
-          Overwatch
+          Overwatch-test
         </h1>
         <div className="flex justify-between items-center">
           <p className="text-cyan-500 font-mono text-xs flex items-center gap-2 tracking-wider">
@@ -36,11 +36,10 @@ export default function AdminMonitor() {
                   @ {event.location}
                 </div>
               </div>
-              <div className={`px-2 py-1 rounded inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider border ${
-                event.status === 'Pass' 
-                  ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' 
+              <div className={`px-2 py-1 rounded inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider border ${event.status === 'Pass'
+                  ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
                   : 'bg-red-500/10 text-red-500 border-red-500/30'
-              }`}>
+                }`}>
                 <span className={`w-1.5 h-1.5 rounded-full ${event.status === 'Pass' ? 'bg-emerald-400' : 'bg-red-500 animate-pulse'}`}></span>
                 {event.status}
               </div>
@@ -52,8 +51,8 @@ export default function AdminMonitor() {
               </div>
               <div className="flex items-center gap-2 flex-1 justify-end">
                 <div className="w-20 h-1.5 bg-slate-800 rounded-full overflow-hidden">
-                  <div 
-                    className={`h-full rounded-full ${event.matchScore > 80 ? 'bg-emerald-400 shadow-[0_0_5px_rgba(52,211,153,0.8)]' : 'bg-red-500 shadow-[0_0_5px_rgba(239,68,68,0.8)]'}`} 
+                  <div
+                    className={`h-full rounded-full ${event.matchScore > 80 ? 'bg-emerald-400 shadow-[0_0_5px_rgba(52,211,153,0.8)]' : 'bg-red-500 shadow-[0_0_5px_rgba(239,68,68,0.8)]'}`}
                     style={{ width: `${event.matchScore}%` }}
                   ></div>
                 </div>
@@ -64,7 +63,7 @@ export default function AdminMonitor() {
             </div>
           </div>
         ))}
-        
+
         {liveFeed.length === 0 && (
           <div className="p-8 text-center text-slate-600 font-mono text-xs uppercase tracking-widest bg-slate-900/50 rounded-xl border border-slate-800">
             [ waiting for feed ]
