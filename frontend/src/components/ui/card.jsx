@@ -6,7 +6,7 @@ const Card = React.forwardRef(({ className, ...props }, ref) => (
   <div
     ref={ref}
     className={cn(
-      "rounded-[2rem] bg-gradient-to-br from-secondary/80 to-card/90 backdrop-blur-xl border border-border/60 text-card-foreground shadow-[0_20px_50px_rgba(0,0,0,0.5)] relative overflow-hidden",
+      "rounded-2xl bg-card border border-border text-card-foreground shadow-lg relative",
       className
     )}
     {...props} />
@@ -16,7 +16,7 @@ Card.displayName = "Card"
 const CardHeader = React.forwardRef(({ className, ...props }, ref) => (
   <div
     ref={ref}
-    className={cn("flex flex-col space-y-1.5 p-6 border-b border-border/50", className)}
+    className={cn("flex flex-col space-y-1.5 p-6 border-b border-border", className)}
     {...props} />
 ))
 CardHeader.displayName = "CardHeader"
@@ -24,7 +24,7 @@ CardHeader.displayName = "CardHeader"
 const CardTitle = React.forwardRef(({ className, ...props }, ref) => (
   <div
     ref={ref}
-    className={cn("text-xl font-bold tracking-wider uppercase", className)}
+    className={cn("text-xl font-bold", className)}
     {...props} />
 ))
 CardTitle.displayName = "CardTitle"
@@ -32,7 +32,7 @@ CardTitle.displayName = "CardTitle"
 const CardDescription = React.forwardRef(({ className, ...props }, ref) => (
   <div
     ref={ref}
-    className={cn("text-[10px] font-mono text-muted-foreground uppercase tracking-widest", className)}
+    className={cn("text-sm text-muted-foreground", className)}
     {...props} />
 ))
 CardDescription.displayName = "CardDescription"

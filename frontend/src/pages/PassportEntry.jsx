@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { Network, Check, ChevronDown, CalendarIcon, UserRound } from 'lucide-react';
+import { Check, ChevronDown, CalendarIcon, UserRound, CheckCircle2, Plane, ScanFace, ShieldCheck } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { format } from 'date-fns';
 
@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandInput, CommandList, CommandEmpty, CommandGroup, CommandItem } from '@/components/ui/command';
 import { Calendar } from '@/components/ui/calendar';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
 
 const PRESET_USERS = [
@@ -22,8 +23,8 @@ const PRESET_USERS = [
 ];
 
 const SHARED_FLIGHT = {
-  flightNumber: 'LH372',
-  airline: 'Lufthansa',
+  flightNumber: 'SG372',
+  airline: 'SkyGate Airways',
   departure: 'AMS',
   arrival: 'FRA',
   gate: 'A7',
@@ -50,6 +51,8 @@ export default function PassportEntry() {
     expiryDate: null
   });
 
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+
   const handleUserSelect = (user) => {
     setSelectedUser(user.fullName);
     setFormData({
@@ -68,8 +71,10 @@ export default function PassportEntry() {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    navigate('/face-scan', { state: { userData: { ...formData, ...SHARED_FLIGHT, expiryDate: formData.expiryDate ? format(formData.expiryDate, 'yyyy-MM-dd') : '' } } });
+    setShowSuccessModal(true);
   };
+
+  const mergedUserData = { ...formData, ...SHARED_FLIGHT, expiryDate: formData.expiryDate ? format(formData.expiryDate, 'yyyy-MM-dd') : '' };
 
   const sortedCountries = countries?.slice().sort((a, b) => a.name.common.localeCompare(b.name.common));
 
@@ -83,27 +88,13 @@ export default function PassportEntry() {
       transition={{ duration: 0.5, ease: "easeOut" }}
       className="p-6 flex flex-col h-full bg-background"
     >
-      <div className="mt-8 mb-8 flex items-center gap-4">
-        <div className="relative shrink-0">
-          <div className="absolute inset-0 bg-primary/20 blur-xl rounded-full animate-pulse"></div>
-          <div className="w-12 h-12 rounded-xl bg-secondary border border-primary/50 flex items-center justify-center relative shadow-[0_0_15px_rgba(34,211,238,0.3)]">
-            <Network className="text-primary w-6 h-6 drop-shadow-[0_0_8px_rgba(34,211,238,0.8)]" />
-            <div className="absolute inset-0.5 border border-primary/20 rounded-lg"></div>
-            <div className="absolute top-0 left-0 w-2 h-2 border-t-2 border-l-2 border-primary rounded-tl-lg"></div>
-            <div className="absolute top-0 right-0 w-2 h-2 border-t-2 border-r-2 border-primary rounded-tr-lg"></div>
-            <div className="absolute bottom-0 left-0 w-2 h-2 border-b-2 border-l-2 border-primary rounded-bl-lg"></div>
-            <div className="absolute bottom-0 right-0 w-2 h-2 border-b-2 border-r-2 border-primary rounded-br-lg"></div>
-          </div>
-        </div>
-
-        <div>
-          <h1 className="text-lg font-black text-foreground tracking-widest uppercase">
-            Digital Identity
-          </h1>
-          <p className="text-primary/70 text-xs font-mono mt-0.5 tracking-wider">
-            DOCUMENT ACQUISITION
-          </p>
-        </div>
+      <div className="mt-6 mb-6">
+        <h1 className="text-2xl font-bold text-foreground">
+          Online Check-in
+        </h1>
+        <p className="text-muted-foreground text-sm mt-1">
+          Enter your details to check in for your flight
+        </p>
       </div>
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-5 flex-1 w-full max-w-sm mx-auto">
@@ -116,11 +107,11 @@ export default function PassportEntry() {
                 role="combobox"
                 aria-expanded={userDropdownOpen}
                 className={cn(
-                  "flex h-12 w-full items-center justify-between rounded-xl border border-input bg-secondary/50 px-4 py-3.5 font-mono text-sm shadow-inner transition-colors",
+                  "flex h-12 w-full items-center justify-between rounded-xl border border-input bg-white px-4 py-3.5 text-sm transition-colors",
                   selectedUser ? "text-foreground" : "text-muted-foreground"
                 )}
               >
-                <span className="flex items-center gap-2 uppercase truncate">
+                <span className="flex items-center gap-2 truncate">
                   <UserRound className="h-4 w-4 text-primary shrink-0" />
                   {selectedUser || "Select passenger"}
                 </span>
@@ -138,7 +129,7 @@ export default function PassportEntry() {
                         onSelect={() => handleUserSelect(user)}
                       >
                         <UserRound className="h-4 w-4 text-primary mr-2 shrink-0" />
-                        <span className="font-mono text-sm truncate">{user.fullName}</span>
+                        <span className="text-sm truncate">{user.fullName}</span>
                         {selectedUser === user.fullName && (
                           <Check className="ml-auto h-4 w-4 text-primary shrink-0" />
                         )}
@@ -158,7 +149,6 @@ export default function PassportEntry() {
             value={formData.fullName}
             onChange={handleChange}
             placeholder="JOHN DOE"
-            className="uppercase"
             required
           />
         </div>
@@ -170,7 +160,6 @@ export default function PassportEntry() {
             value={formData.passportNumber}
             onChange={handleChange}
             placeholder="A12345678"
-            className="uppercase"
             required
           />
         </div>
@@ -184,11 +173,11 @@ export default function PassportEntry() {
                 role="combobox"
                 aria-expanded={comboboxOpen}
                 className={cn(
-                  "flex h-12 w-full items-center justify-between rounded-xl border border-input bg-secondary/50 px-4 py-3.5 font-mono text-sm shadow-inner transition-colors",
+                  "flex h-12 w-full items-center justify-between rounded-xl border border-input bg-white px-4 py-3.5 text-sm transition-colors",
                   formData.nationality ? "text-foreground" : "text-muted-foreground"
                 )}
               >
-                <span className="uppercase truncate">
+                <span className="truncate">
                   {formData.nationality
                     ? `${sortedCountries?.find(c => c.name.common === formData.nationality)?.flag || ''} ${formData.nationality}`
                     : "Select Country"}
@@ -212,7 +201,7 @@ export default function PassportEntry() {
                         }}
                       >
                         <span className="text-xl">{country.flag}</span>
-                        <span className="font-mono text-sm truncate">{country.name.common}</span>
+                        <span className="text-sm truncate">{country.name.common}</span>
                         {formData.nationality === country.name.common && (
                           <Check className="ml-auto h-4 w-4 text-primary shrink-0" />
                         )}
@@ -232,7 +221,7 @@ export default function PassportEntry() {
               <button
                 type="button"
                 className={cn(
-                  "flex h-12 w-full items-center rounded-xl border border-input bg-secondary/50 px-4 py-3.5 font-mono text-sm shadow-inner transition-colors",
+                  "flex h-12 w-full items-center rounded-xl border border-input bg-white px-4 py-3.5 text-sm transition-colors",
                   formData.expiryDate ? "text-foreground" : "text-muted-foreground"
                 )}
               >
@@ -255,7 +244,7 @@ export default function PassportEntry() {
           </Popover>
         </div>
 
-        <div className="mt-auto pt-8 pb-4">
+        <div className="pt-6 pb-4">
           <Button
             type="submit"
             disabled={!isFormValid}
@@ -265,14 +254,71 @@ export default function PassportEntry() {
             asChild
           >
             <motion.button whileTap={{ scale: 0.96 }}>
-              {isFormValid && (
-                <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-in-out"></div>
-              )}
-              <span className="relative z-10">Verify & Continue</span>
+              Check In
             </motion.button>
           </Button>
         </div>
       </form>
+      <Dialog open={showSuccessModal} onOpenChange={setShowSuccessModal}>
+        <DialogContent className="w-[calc(100%-2rem)] max-w-sm mx-auto rounded-2xl">
+          <DialogHeader className="items-center text-center">
+            <div className="w-16 h-16 rounded-full bg-emerald-50 flex items-center justify-center mx-auto mb-3">
+              <CheckCircle2 className="w-8 h-8 text-emerald-500" />
+            </div>
+            <DialogTitle className="text-xl font-bold">You're checked in!</DialogTitle>
+            <DialogDescription className="text-muted-foreground">
+              Here's your flight summary
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="bg-slate-50 rounded-xl p-4 space-y-2 text-sm">
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Passenger</span>
+              <span className="font-medium">{formData.fullName}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Flight</span>
+              <span className="font-medium">{SHARED_FLIGHT.flightNumber}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Route</span>
+              <span className="font-medium">{SHARED_FLIGHT.departure} → {SHARED_FLIGHT.arrival}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Gate</span>
+              <span className="font-medium">{SHARED_FLIGHT.gate}</span>
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-3 mt-2">
+            <p className="text-sm text-muted-foreground text-center">
+              Skip the queues — a quick face scan lets you breeze through security and boarding in seconds.
+            </p>
+            <Button
+              variant="accent"
+              size="lg"
+              className="w-full"
+              onClick={() => { setShowSuccessModal(false); setTimeout(() => navigate('/face-scan', { state: { userData: mergedUserData } }), 300); }}
+              asChild
+            >
+              <motion.button whileTap={{ scale: 0.96 }} className="text-sm">
+                <ScanFace className="w-5 h-5 shrink-0" />
+                <span>Create Biometric Pass</span>
+              </motion.button>
+            </Button>
+            <div className="flex items-center justify-center gap-1.5 text-xs text-muted-foreground">
+              <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />
+              <span>Encrypted & secure — your data is never shared</span>
+            </div>
+            <Button
+              variant="ghost"
+              onClick={() => { setShowSuccessModal(false); setTimeout(() => navigate('/pass', { state: { userData: mergedUserData } }), 300); }}
+            >
+              Skip for now
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </motion.div>
   );
 }

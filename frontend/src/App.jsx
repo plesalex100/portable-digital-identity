@@ -7,6 +7,7 @@ import AdminMonitor from './pages/AdminMonitor';
 import Verification from './pages/Verification';
 import Dashboard from './pages/Dashboard';
 
+
 const FULL_WIDTH_ROUTES = ['/activity'];
 
 function AnimatedRoutes() {
@@ -32,16 +33,16 @@ export default function App() {
 
   if (isFullWidth) {
     return (
-      <div className="min-h-screen bg-[#020617] text-white font-sans selection:bg-cyan-500/30">
+      <div className="min-h-screen bg-background text-foreground font-sans selection:bg-primary/20">
         <AnimatedRoutes />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-black sm:bg-slate-900 flex justify-center text-white font-sans selection:bg-cyan-500/30">
-      {/* Mobile App Viewport Constraints - specifically Dark Mode #020617 */}
-      <div className="w-full max-w-md bg-[#020617] h-[100dvh] relative shadow-[0_0_50px_rgba(8,145,178,0.15)] flex flex-col overflow-hidden sm:border-x sm:border-slate-800">
+    <div className="min-h-screen bg-slate-100 sm:bg-slate-200 flex justify-center text-foreground font-sans selection:bg-primary/20">
+      {/* Mobile App Viewport */}
+      <div className="w-full max-w-md bg-background h-[100dvh] relative shadow-xl flex flex-col overflow-hidden sm:border-x sm:border-slate-200">
 
         <main className="flex-1 overflow-x-hidden overflow-y-auto scroll-smooth no-scrollbar relative w-full h-full">
           <AnimatedRoutes />

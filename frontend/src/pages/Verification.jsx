@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ShieldCheck, ShieldAlert, ScanFace, RotateCcw } from 'lucide-react';
 import { verifyFace } from '../api';
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
 
 const CHECKPOINTS = [
   { id: 'security', label: 'Security Checkpoint' },
@@ -17,6 +18,7 @@ export default function Verification() {
 
   const [checkpoint, setCheckpoint] = useState(CHECKPOINTS[0]);
   const [stage, setStage] = useState('ready'); // ready | scanning | verified | rejected | error
+  const [cameraReady, setCameraReady] = useState(false);
   const [result, setResult] = useState(null);
   const [errorMsg, setErrorMsg] = useState('');
 
@@ -36,6 +38,7 @@ export default function Verification() {
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
       }
+      setCameraReady(true);
     } catch (err) {
       console.error('Camera access denied:', err);
       setErrorMsg('Camera access denied.');
@@ -63,6 +66,7 @@ export default function Verification() {
     return () => stopCamera();
   }, [startCamera, stopCamera]);
 
+
   const handleScan = async () => {
     setStage('scanning');
     setResult(null);
@@ -88,6 +92,20 @@ export default function Verification() {
     }
   };
 
+  // Auto-scan when camera is ready or after reset
+  useEffect(() => {
+    if (stage !== 'ready' || !cameraReady) return;
+    const timer = setTimeout(() => handleScan(), 1500);
+    return () => clearTimeout(timer);
+  }, [stage, cameraReady]);
+
+  // Auto-restart after 5s when verified or rejected
+  useEffect(() => {
+    if (stage !== 'verified' && stage !== 'rejected') return;
+    const timer = setTimeout(() => handleReset(), 5000);
+    return () => clearTimeout(timer);
+  }, [stage]);
+
   const handleReset = () => {
     setStage('ready');
     setResult(null);
@@ -104,21 +122,21 @@ export default function Verification() {
   }[stage];
 
   return (
-    <div className="flex flex-col h-full bg-[#020617] relative overflow-hidden">
+    <div className="flex flex-col h-full bg-background relative overflow-hidden">
       <canvas ref={canvasRef} className="hidden" />
 
       {/* Header */}
-      <div className="px-5 pt-6 pb-4 border-b border-slate-800 z-10">
+      <div className="px-5 pt-6 pb-4 border-b border-slate-200 z-10">
         <div className="flex items-center justify-between mb-3">
-          <h1 className="text-lg font-black text-white uppercase tracking-widest">
-            Checkpoint Verify
+          <h1 className="text-lg font-bold text-foreground">
+            Identity Check
           </h1>
-          <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-[10px] font-mono font-bold uppercase tracking-wider ${
+          <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-[10px] font-bold ${
             stage === 'verified'
-              ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'
+              ? 'bg-emerald-50 text-emerald-600 border-emerald-200'
               : stage === 'rejected' || stage === 'error'
-              ? 'bg-red-500/10 text-red-400 border-red-500/30'
-              : 'bg-cyan-500/10 text-cyan-400 border-cyan-500/30'
+              ? 'bg-red-50 text-red-600 border-red-200'
+              : 'bg-sky-50 text-primary border-sky-200'
           }`}>
             <span className={`w-1.5 h-1.5 rounded-full ${
               stage === 'scanning' ? 'animate-pulse' : ''
@@ -132,28 +150,23 @@ export default function Verification() {
         </div>
 
         {/* Checkpoint Selector */}
-        <div className="flex gap-2 overflow-x-auto no-scrollbar">
-          {CHECKPOINTS.map((cp) => (
-            <button
-              key={cp.id}
-              onClick={() => setCheckpoint(cp)}
-              className={`whitespace-nowrap px-3 py-1.5 rounded-lg font-mono text-[10px] uppercase tracking-wider border transition-all ${
-                checkpoint.id === cp.id
-                  ? 'bg-cyan-500/15 text-cyan-300 border-cyan-500/40'
-                  : 'bg-slate-900/50 text-slate-500 border-slate-800 hover:text-slate-300'
-              }`}
-            >
-              {cp.label}
-            </button>
-          ))}
-        </div>
+        <Select value={checkpoint.id} onValueChange={(val) => setCheckpoint(CHECKPOINTS.find(cp => cp.id === val))}>
+          <SelectTrigger className="w-full rounded-lg">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {CHECKPOINTS.map((cp) => (
+              <SelectItem key={cp.id} value={cp.id}>{cp.label}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
 
       {/* Camera + Result Area */}
       <div className="flex-1 flex flex-col items-center justify-center px-5 relative">
 
         {/* Camera View */}
-        <div className="relative w-full aspect-square max-w-[300px] rounded-2xl overflow-hidden border-2 border-slate-800 bg-black">
+        <div className="relative w-full aspect-square max-w-[300px] rounded-2xl overflow-hidden border-2 border-slate-200 bg-slate-100">
           <video
             ref={videoRef}
             autoPlay
@@ -167,7 +180,7 @@ export default function Verification() {
             <motion.div
               animate={{ y: ['-100%', '300%', '-100%'] }}
               transition={{ duration: 2, ease: 'linear', repeat: Infinity }}
-              className="absolute top-0 left-0 w-full h-20 bg-gradient-to-b from-transparent via-cyan-400/20 to-cyan-400/60 border-b-2 border-cyan-300 z-10 pointer-events-none"
+              className="absolute top-0 left-0 w-full h-20 bg-gradient-to-b from-transparent via-primary/20 to-primary/50 border-b-2 border-primary z-10 pointer-events-none"
             />
           )}
 
@@ -187,17 +200,15 @@ export default function Verification() {
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
                 className={`absolute inset-0 z-20 flex flex-col items-center justify-center gap-3 ${
-                  stage === 'verified' ? 'bg-emerald-950/70' : 'bg-red-950/70'
+                  stage === 'verified' ? 'bg-green-500/80' : 'bg-red-500/80'
                 }`}
               >
                 {stage === 'verified' ? (
-                  <ShieldCheck className="w-16 h-16 text-emerald-400 drop-shadow-[0_0_15px_rgba(52,211,153,0.6)]" strokeWidth={1.5} />
+                  <ShieldCheck className="w-16 h-16 text-white" strokeWidth={1.5} />
                 ) : (
-                  <ShieldAlert className="w-16 h-16 text-red-400 drop-shadow-[0_0_15px_rgba(239,68,68,0.6)]" strokeWidth={1.5} />
+                  <ShieldAlert className="w-16 h-16 text-white" strokeWidth={1.5} />
                 )}
-                <span className={`font-mono text-sm font-bold uppercase tracking-widest ${
-                  stage === 'verified' ? 'text-emerald-400' : 'text-red-400'
-                }`}>
+                <span className="text-sm font-bold text-white">
                   {stage === 'verified' ? 'Identity Confirmed' : 'Access Denied'}
                 </span>
               </motion.div>
@@ -213,31 +224,31 @@ export default function Verification() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
-              className="mt-5 w-full max-w-[300px] bg-slate-900/60 border border-emerald-500/20 rounded-xl p-4 space-y-3"
+              className="mt-5 w-full max-w-[300px] bg-card border border-border rounded-xl p-4 space-y-3 shadow-sm"
             >
               <div className="flex justify-between items-center">
-                <div className="text-[9px] font-mono text-slate-500 uppercase tracking-widest">Passenger</div>
-                <div className="font-mono text-sm text-white font-bold tracking-wider uppercase">{result.name}</div>
+                <div className="text-xs text-muted-foreground">Passenger</div>
+                <div className="text-sm text-foreground font-medium">{result.name}</div>
               </div>
               <div className="flex justify-between items-center">
-                <div className="text-[9px] font-mono text-slate-500 uppercase tracking-widest">Confidence</div>
+                <div className="text-xs text-muted-foreground">Confidence</div>
                 <div className="flex items-center gap-2">
-                  <div className="w-16 h-1.5 bg-slate-800 rounded-full overflow-hidden">
+                  <div className="w-16 h-1.5 bg-slate-100 rounded-full overflow-hidden">
                     <div
-                      className="h-full rounded-full bg-emerald-400 shadow-[0_0_5px_rgba(52,211,153,0.8)]"
+                      className="h-full rounded-full bg-emerald-400"
                       style={{ width: `${result.confidence}%` }}
                     />
                   </div>
-                  <span className="font-mono text-xs text-emerald-400 font-bold">{result.confidence?.toFixed(1)}%</span>
+                  <span className="text-xs text-emerald-600 font-bold">{result.confidence?.toFixed(1)}%</span>
                 </div>
               </div>
               <div className="flex justify-between items-center">
-                <div className="text-[9px] font-mono text-slate-500 uppercase tracking-widest">Checkpoint</div>
-                <div className="font-mono text-xs text-cyan-400 tracking-wider">{checkpoint.label}</div>
+                <div className="text-xs text-muted-foreground">Checkpoint</div>
+                <div className="text-xs text-primary font-medium">{checkpoint.label}</div>
               </div>
               <div className="flex justify-between items-center">
-                <div className="text-[9px] font-mono text-slate-500 uppercase tracking-widest">Timestamp</div>
-                <div className="font-mono text-xs text-slate-400 tracking-wider">
+                <div className="text-xs text-muted-foreground">Timestamp</div>
+                <div className="text-xs text-muted-foreground">
                   {new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
                 </div>
               </div>
@@ -250,49 +261,28 @@ export default function Verification() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
-              className="mt-5 w-full max-w-[300px] bg-slate-900/60 border border-red-500/20 rounded-xl p-4 text-center"
+              className="mt-5 w-full max-w-[300px] bg-card border border-red-200 rounded-xl p-4 text-center shadow-sm"
             >
-              <p className="font-mono text-xs text-red-400">{errorMsg}</p>
+              <p className="text-sm text-red-500">{errorMsg}</p>
             </motion.div>
           )}
         </AnimatePresence>
       </div>
 
-      {/* Action Buttons */}
-      <div className="px-5 pb-6 pt-4 z-10">
-        {stage === 'ready' && (
-          <motion.button
-            whileTap={{ scale: 0.96 }}
-            onClick={handleScan}
-            className="w-full flex items-center justify-center gap-3 px-6 py-4 rounded-xl bg-cyan-500 text-[#020617] font-bold tracking-widest uppercase shadow-[0_0_20px_rgba(34,211,238,0.3)] hover:shadow-[0_0_30px_rgba(34,211,238,0.5)] transition-shadow"
-          >
-            <ScanFace className="w-5 h-5" />
-            <span>Scan & Verify</span>
-          </motion.button>
-        )}
-
+      {/* Status Text */}
+      <div className="px-5 pb-6 pt-4 z-10 text-center text-sm text-muted-foreground">
+        {stage === 'ready' && 'Preparing scan...'}
         {stage === 'scanning' && (
-          <div className="w-full flex items-center justify-center gap-3 px-6 py-4 rounded-xl bg-slate-800 text-cyan-400 font-mono text-sm uppercase tracking-widest">
-            <motion.div
-              animate={{ rotate: 360 }}
-              transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
-            >
+          <span className="flex items-center justify-center gap-2 text-primary font-medium">
+            <motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}>
               <RotateCcw className="w-4 h-4" />
             </motion.div>
             Verifying...
-          </div>
+          </span>
         )}
-
-        {(stage === 'verified' || stage === 'rejected' || stage === 'error') && (
-          <motion.button
-            whileTap={{ scale: 0.96 }}
-            onClick={handleReset}
-            className="w-full flex items-center justify-center gap-3 px-6 py-4 rounded-xl bg-slate-800 border border-slate-700 text-white font-bold tracking-widest uppercase hover:bg-slate-700 transition-colors"
-          >
-            <RotateCcw className="w-5 h-5" />
-            <span>Scan Next</span>
-          </motion.button>
-        )}
+        {stage === 'verified' && 'Verified — next passenger in a moment...'}
+        {stage === 'rejected' && 'Not recognized — retrying shortly...'}
+        {stage === 'error' && 'Something went wrong — retrying...'}
       </div>
     </div>
   );

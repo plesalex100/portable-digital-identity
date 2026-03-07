@@ -1,41 +1,46 @@
 import { Link, useLocation } from 'react-router-dom';
+import { Plane, ScanFace, CreditCard, LayoutDashboard } from 'lucide-react';
 
 export default function Navigation() {
   const location = useLocation();
 
   const links = [
-    { name: 'Home', path: '/' },
-    { name: 'Enroll', path: '/enroll' },
-    { name: 'Token', path: '/dashboard' },
-    { name: 'Monitor', path: '/admin' },
+    { name: 'Check-in', path: '/', icon: Plane },
+    { name: 'Biometric', path: '/face-scan', icon: ScanFace },
+    { name: 'My Pass', path: '/pass', icon: CreditCard },
+    { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
   ];
 
   return (
     <>
       {/* Top Header */}
-      <nav className="absolute top-0 left-0 w-full z-50 bg-slate-950/80 backdrop-blur-md border-b border-cyan-900/40 shadow-[0_4px_30px_rgba(8,145,178,0.1)]">
-        <div className="flex justify-center items-center py-4">
-          <Link to="/" className="text-xl font-black tracking-widest text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-600 drop-shadow-[0_0_8px_rgba(34,211,238,0.3)]">
-            BIOTRAVEL
+      <nav className="sticky top-0 left-0 w-full z-50 bg-white/90 backdrop-blur-md border-b border-slate-200 shadow-sm">
+        <div className="flex justify-center items-center py-3">
+          <Link to="/" className="flex items-center gap-2 text-lg font-bold text-primary">
+            <Plane className="w-5 h-5" />
+            SkyGate Airways
           </Link>
         </div>
       </nav>
 
       {/* Bottom Mobile Nav */}
-      <nav className="absolute bottom-0 left-0 w-full bg-slate-950/90 backdrop-blur-md border-t border-cyan-900/60 flex justify-around items-center py-4 px-2 shadow-[0_-4px_20px_rgba(8,145,178,0.15)] z-50">
-        {links.map((link) => (
-          <Link
-            key={link.path}
-            to={link.path}
-            className={`text-[10px] font-bold tracking-widest uppercase transition-all duration-300 flex flex-col items-center gap-1.5 ${
-              location.pathname === link.path 
-                ? 'text-cyan-400 transform scale-105 drop-shadow-[0_0_5px_rgba(34,211,238,0.8)]' 
-                : 'text-slate-500 hover:text-cyan-300'
-            }`}
-          >
-            <span>{link.name}</span>
-          </Link>
-        ))}
+      <nav className="sticky bottom-0 left-0 w-full bg-white/90 backdrop-blur-md border-t border-slate-200 flex justify-around items-center py-3 px-2 z-50">
+        {links.map((link) => {
+          const Icon = link.icon;
+          const isActive = location.pathname === link.path;
+          return (
+            <Link
+              key={link.path}
+              to={link.path}
+              className={`text-[11px] font-medium transition-colors duration-200 flex flex-col items-center gap-1 ${
+                isActive ? 'text-primary' : 'text-slate-400 hover:text-slate-600'
+              }`}
+            >
+              <Icon className="w-5 h-5" />
+              <span>{link.name}</span>
+            </Link>
+          );
+        })}
       </nav>
     </>
   );

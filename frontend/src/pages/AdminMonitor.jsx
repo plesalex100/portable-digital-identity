@@ -11,31 +11,31 @@ export default function AdminMonitor() {
 
   return (
     <div className="flex flex-col space-y-6 w-full pb-8">
-      <div className="flex flex-col space-y-2 border-b border-slate-800 pb-4">
-        <h1 className="text-2xl font-black uppercase tracking-widest text-white">
-          Overwatch-test
+      <div className="flex flex-col space-y-2 border-b border-border pb-4">
+        <h1 className="text-2xl font-bold text-foreground">
+          Live Monitoring
         </h1>
         <div className="flex justify-between items-center">
-          <p className="text-cyan-500 font-mono text-xs flex items-center gap-2 tracking-wider">
-            <span className="w-2.5 h-2.5 rounded-full bg-cyan-400 animate-pulse shadow-[0_0_8px_currentColor]"></span>
-            LIVE FEED
+          <p className="text-primary text-xs font-medium flex items-center gap-2">
+            <span className="w-2.5 h-2.5 rounded-full bg-primary animate-pulse"></span>
+            Live Feed
           </p>
           <Badge variant="secondary" className="text-[10px]">
-            System <span className="text-emerald-400 ml-1">Online</span>
+            System <span className="text-emerald-600 ml-1">Online</span>
           </Badge>
         </div>
       </div>
 
       <div className="space-y-4">
         {liveFeed.map((event) => (
-          <Card key={event.id} className="rounded-xl bg-slate-900/50 border-slate-800 shadow-lg active:scale-[0.98] transition-all backdrop-blur-none">
+          <Card key={event.id} className="rounded-xl bg-card border-border shadow-sm active:scale-[0.98] transition-all">
             <CardContent className="p-4 flex flex-col gap-4">
               <div className="flex justify-between items-start">
                 <div>
-                  <div className="font-mono font-bold tracking-wider text-slate-200 text-sm">
+                  <div className="font-medium text-foreground text-sm">
                     {event.passengerId}
                   </div>
-                  <div className="text-cyan-200/60 text-xs mt-1">
+                  <div className="text-muted-foreground text-xs mt-1">
                     @ {event.location}
                   </div>
                 </div>
@@ -45,18 +45,18 @@ export default function AdminMonitor() {
                 </Badge>
               </div>
 
-              <div className="flex items-center justify-between pt-3 border-t border-slate-800/50">
-                <div className="font-mono text-[10px] text-slate-500">
+              <div className="flex items-center justify-between pt-3 border-t border-border">
+                <div className="text-xs text-muted-foreground">
                   {event.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
                 </div>
                 <div className="flex items-center gap-2 flex-1 justify-end">
-                  <div className="w-20 h-1.5 bg-slate-800 rounded-full overflow-hidden">
+                  <div className="w-20 h-1.5 bg-slate-100 rounded-full overflow-hidden">
                     <div
-                      className={`h-full rounded-full ${event.matchScore > 80 ? 'bg-emerald-400 shadow-[0_0_5px_rgba(52,211,153,0.8)]' : 'bg-red-500 shadow-[0_0_5px_rgba(239,68,68,0.8)]'}`}
+                      className={`h-full rounded-full ${event.matchScore > 80 ? 'bg-emerald-500' : 'bg-red-500'}`}
                       style={{ width: `${event.matchScore}%` }}
                     ></div>
                   </div>
-                  <span className={`font-mono text-xs font-bold w-10 text-right ${event.matchScore > 80 ? 'text-emerald-400' : 'text-red-400'}`}>
+                  <span className={`text-xs font-bold w-10 text-right ${event.matchScore > 80 ? 'text-emerald-600' : 'text-red-500'}`}>
                     {event.matchScore.toFixed(0)}%
                   </span>
                 </div>
@@ -66,9 +66,9 @@ export default function AdminMonitor() {
         ))}
 
         {liveFeed.length === 0 && (
-          <Card className="rounded-xl bg-slate-900/50 border-slate-800">
-            <CardContent className="p-8 text-center text-slate-600 font-mono text-xs uppercase tracking-widest">
-              [ waiting for feed ]
+          <Card className="rounded-xl bg-card border-border">
+            <CardContent className="p-8 text-center text-muted-foreground text-sm">
+              Waiting for events...
             </CardContent>
           </Card>
         )}

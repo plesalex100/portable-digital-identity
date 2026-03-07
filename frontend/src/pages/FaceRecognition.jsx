@@ -19,12 +19,12 @@ export default function FaceRecognition() {
   const [errorMsg, setErrorMsg] = useState('');
 
   const statusConfig = {
-    idle: { text: 'STARTING CAMERA...', color: 'text-cyan-500' },
-    detecting: { text: '> DETECTING FACE...', color: 'text-cyan-400' },
-    analyzing: { text: '> CAPTURING & ENROLLING...', color: 'text-cyan-300' },
-    hashing: { text: '> PROCESSING BIOMETRIC DATA...', color: 'text-cyan-200' },
-    complete: { text: '✓ BIOMETRIC LOCK SECURED', color: 'text-emerald-400' },
-    error: { text: '✗ ENROLLMENT FAILED', color: 'text-red-400' },
+    idle: { text: 'Starting camera...', color: 'text-muted-foreground' },
+    detecting: { text: 'Looking for your face...', color: 'text-primary' },
+    analyzing: { text: 'Capturing biometric data...', color: 'text-primary' },
+    hashing: { text: 'Processing...', color: 'text-primary' },
+    complete: { text: 'Biometric pass created!', color: 'text-emerald-600' },
+    error: { text: 'Enrollment failed', color: 'text-red-500' },
   };
 
   const stopCamera = useCallback(() => {
@@ -136,16 +136,16 @@ export default function FaceRecognition() {
       animate={{ opacity: 1 }}
       exit={{ opacity: 0, scale: 0.95 }}
       transition={{ duration: 0.6 }}
-      className="flex flex-col items-center justify-center h-full bg-[#020617] px-6"
+      className="flex flex-col items-center justify-center h-full bg-background px-6"
     >
       <canvas ref={canvasRef} className="hidden" />
 
       <div className="absolute top-12 w-full text-center">
-        <h2 className="text-xl font-black text-white uppercase tracking-widest drop-shadow-[0_0_10px_rgba(255,255,255,0.2)]">
-          Zero-Trust Enrollment
+        <h2 className="text-xl font-bold text-foreground">
+          Create Your Biometric Pass
         </h2>
         <div className="mt-4 h-6 flex justify-center items-center">
-           <p className={`font-mono text-xs tracking-wider font-bold transition-colors duration-300 ${statusConfig[scanStage].color}`}>
+           <p className={`text-sm font-medium transition-colors duration-300 ${statusConfig[scanStage].color}`}>
              {statusConfig[scanStage].text}
            </p>
         </div>
@@ -155,8 +155,8 @@ export default function FaceRecognition() {
       <div className="relative mt-16 w-[280px] h-[280px] flex items-center justify-center">
 
         {/* Glow Effects */}
-        <div className={`absolute inset-0 rounded-full blur-2xl opacity-30 transition-colors duration-1000 ${
-          scanStage === 'complete' ? 'bg-emerald-500' : scanStage === 'error' ? 'bg-red-500' : 'bg-cyan-500'
+        <div className={`absolute inset-0 rounded-full blur-2xl opacity-20 transition-colors duration-1000 ${
+          scanStage === 'complete' ? 'bg-emerald-500' : scanStage === 'error' ? 'bg-red-500' : 'bg-primary'
         }`}></div>
 
         {/* Outer Progress Ring SVG */}
@@ -167,7 +167,7 @@ export default function FaceRecognition() {
           />
           <circle
             cx="150" cy="150" r="120"
-            stroke={scanStage === 'complete' ? '#34d399' : scanStage === 'error' ? '#f87171' : '#22d3ee'}
+            stroke={scanStage === 'complete' ? '#22c55e' : scanStage === 'error' ? '#f87171' : '#0ea5e9'}
             strokeWidth="6"
             fill="none"
             strokeLinecap="round"
@@ -176,12 +176,12 @@ export default function FaceRecognition() {
               strokeDashoffset: strokeDashoffset,
               transition: 'stroke-dashoffset 0.1s ease-out'
             }}
-            className="drop-shadow-[0_0_12px_rgba(34,211,238,0.8)]"
+            className="drop-shadow-[0_0_8px_rgba(14,165,233,0.5)]"
           />
         </svg>
 
         {/* The Camera Slot Wrapper */}
-        <div className="relative w-64 h-64 rounded-full overflow-hidden border-2 border-slate-800 bg-[#020617] shadow-inner z-10 flex items-center justify-center">
+        <div className="relative w-64 h-64 rounded-full overflow-hidden border-2 border-slate-200 bg-background shadow-inner z-10 flex items-center justify-center">
 
           {/* Real camera stream */}
           <video
@@ -197,34 +197,33 @@ export default function FaceRecognition() {
             <motion.div
               animate={{ y: ["-100%", "300%", "-100%"] }}
               transition={{ duration: 2.5, ease: "linear", repeat: Infinity }}
-              className="absolute top-0 left-0 w-full h-24 bg-gradient-to-b from-transparent via-cyan-400/20 to-cyan-400/70 border-b-[3px] border-cyan-300 z-30 pointer-events-none shadow-[0_5px_15px_rgba(34,211,238,0.5)]"
+              className="absolute top-0 left-0 w-full h-24 bg-gradient-to-b from-transparent via-primary/20 to-primary/50 border-b-[3px] border-primary z-30 pointer-events-none"
             />
           )}
 
           {/* Reticle grid overlay */}
-          <div className="absolute inset-0 bg-[linear-gradient(rgba(34,211,238,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(34,211,238,0.05)_1px,transparent_1px)] bg-[size:20px_20px] pointer-events-none z-20"></div>
+          <div className="absolute inset-0 pointer-events-none z-20"></div>
 
           {/* Center alignment pip */}
-          {scanStage !== 'complete' && scanStage !== 'error' && <div className="absolute w-2 h-2 rounded-full bg-cyan-500/50 shadow-[0_0_8px_rgba(34,211,238,0.8)] z-20 pointer-events-none"></div>}
+          {scanStage !== 'complete' && scanStage !== 'error' && <div className="absolute w-2 h-2 rounded-full bg-primary/50 z-20 pointer-events-none"></div>}
         </div>
       </div>
 
       <div className="absolute bottom-12 w-full px-8 text-center">
         {scanStage === 'error' ? (
           <div className="space-y-3">
-            <p className="font-mono text-xs text-red-400">{errorMsg}</p>
+            <p className="text-sm text-red-500">{errorMsg}</p>
             <Button
               variant="link"
               onClick={() => window.location.reload()}
-              className="font-mono text-xs"
             >
               Retry
             </Button>
           </div>
         ) : (
-          <div className="font-mono text-[10px] uppercase tracking-widest text-slate-500 flex justify-center gap-1">
-            System Load: <span className="text-cyan-400">{Math.floor(Math.random() * 20 + 40)}%</span> | Latency: <span className="text-cyan-400">14ms</span>
-          </div>
+          <p className="text-sm text-muted-foreground">
+            Hold still and look at the camera
+          </p>
         )}
       </div>
     </motion.div>
