@@ -16,6 +16,8 @@ const createFaceClient = () => {
     return client;
 }
 
+const personGroupId = "hacktech-2026";
+
 const router = Router();
 
 router.get("/health", (req, res) => {
@@ -27,18 +29,20 @@ router.get("/health", (req, res) => {
     }
 });
 
-type EnrollRequest = {
-    name: string;
-    image: string;
+type EnrollRequestBody = {
+    name?: string;
+    image?: string;
 }
 
 router.post("/enroll", async function(req, res){
     
-    const { name, image } = req.body as EnrollRequest;
+    const { name, image } = req.body as EnrollRequestBody;
     if (!name || !image) {
         return res.status(400).json({success: false, message: "Name and image are required"});
     }
 
+
+    
 })
 
 
