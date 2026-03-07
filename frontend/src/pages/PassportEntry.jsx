@@ -5,7 +5,7 @@ import { Network, ChevronDown, Search, Check } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 
 const fetchCountries = async () => {
-  const response = await fetch('https://restcountries.com/v3.1/all?fields=name,flag');
+  const response = await fetch('https://restcountries.com/v3.1/all?fields=name,flag,cca2,cca3');
   return response.json();
 }
 
@@ -27,9 +27,18 @@ export default function PassportEntry() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  const searchLower = countrySearch.toLowerCase();
   const filteredCountries = countries?.filter(country => 
-    country.name.common.toLowerCase().includes(countrySearch.toLowerCase())
-  ).sort((a, b) => a.name.common.localeCompare(b.name.common));
+    country.name.common.toLowerCase().includes(searchLower) ||
+    country.cca2?.toLowerCase().includes(searchLower) ||
+    country.cca3?.toLowerCase().includes(searchLower)
+  ).sort((a, b) => {
+    const aStarts = a.name.common.toLowerCase().startsWith(searchLower);
+    const bStarts = b.name.common.toLowerCase().startsWith(searchLower);
+    if (aStarts && !bStarts) return -1;
+    if (!aStarts && bStarts) return 1;
+    return a.name.common.localeCompare(b.name.common);
+  });
 
   const [formData, setFormData] = useState({
     fullName: '',
