@@ -16,7 +16,7 @@ const createFaceClient = (): FaceClient => {
     return client;
 }
 
-const router: Router = Router(); 
+const router = Router(); 
 
 router.get("/health", (req: Request, res: Response) => {
     
