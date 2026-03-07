@@ -1,10 +1,13 @@
-import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
+import { Routes, Route, useLocation } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
 import PassportEntry from './pages/PassportEntry';
 import FaceRecognition from './pages/FaceRecognition';
 import FinalPass from './pages/FinalPass';
 import AdminMonitor from './pages/AdminMonitor';
 import Verification from './pages/Verification';
+import Dashboard from './pages/Dashboard';
+
+const FULL_WIDTH_ROUTES = ['/activity'];
 
 function AnimatedRoutes() {
   const location = useLocation();
@@ -17,12 +20,24 @@ function AnimatedRoutes() {
         <Route path="/pass" element={<FinalPass />} />
         <Route path="/verify" element={<Verification />} />
         <Route path="/dashboard" element={<AdminMonitor />} />
+        <Route path="/activity" element={<Dashboard />} />
       </Routes>
     </AnimatePresence>
   );
 }
 
 export default function App() {
+  const location = useLocation();
+  const isFullWidth = FULL_WIDTH_ROUTES.includes(location.pathname);
+
+  if (isFullWidth) {
+    return (
+      <div className="min-h-screen bg-[#020617] text-white font-sans selection:bg-cyan-500/30">
+        <AnimatedRoutes />
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-black sm:bg-slate-900 flex justify-center text-white font-sans selection:bg-cyan-500/30">
       {/* Mobile App Viewport Constraints - specifically Dark Mode #020617 */}
