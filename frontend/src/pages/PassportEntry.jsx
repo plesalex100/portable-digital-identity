@@ -183,22 +183,21 @@ export default function PassportEntry() {
         </div>
 
         <div className="mt-auto pt-8 pb-4">
-          <motion.button
+          <Button
             type="submit"
             disabled={!isFormValid}
-            whileTap={{ scale: 0.96 }}
-            className={cn(
-              "w-full py-4 rounded-xl uppercase tracking-widest font-bold text-sm transition-all duration-300 relative overflow-hidden group cursor-pointer",
-              isFormValid
-                ? "bg-primary hover:bg-primary/90 text-primary-foreground shadow-[0_0_20px_rgba(34,211,238,0.4)] hover:shadow-[0_0_30px_rgba(34,211,238,0.6)]"
-                : "bg-secondary text-muted-foreground border border-border cursor-not-allowed opacity-50"
-            )}
+            variant={isFormValid ? "default" : "secondary"}
+            size="lg"
+            className="w-full py-4 group"
+            asChild
           >
-            {isFormValid && (
-              <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-in-out"></div>
-            )}
-            <span className="relative z-10">Verify & Continue</span>
-          </motion.button>
+            <motion.button whileTap={{ scale: 0.96 }}>
+              {isFormValid && (
+                <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-in-out"></div>
+              )}
+              <span className="relative z-10">Verify & Continue</span>
+            </motion.button>
+          </Button>
         </div>
       </form>
     </motion.div>
