@@ -2,12 +2,13 @@ import { Routes, Route, useLocation } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
 import PassportEntry from './pages/PassportEntry';
 import FaceRecognition from './pages/FaceRecognition';
+import CheckedIn from './pages/CheckedIn';
 import FinalPass from './pages/FinalPass';
 import Verification from './pages/Verification';
 import Dashboard from './pages/Dashboard';
 
 
-const FULL_WIDTH_ROUTES = ['/activity'];
+const FULL_WIDTH_ROUTES = ['/activity', '/dashboard'];
 
 function AnimatedRoutes() {
   const location = useLocation();
@@ -16,6 +17,7 @@ function AnimatedRoutes() {
     <AnimatePresence mode="wait">
       <Routes location={location} key={location.pathname}>
         <Route path="/" element={<PassportEntry />} />
+        <Route path="/checked-in" element={<CheckedIn />} />
         <Route path="/face-scan" element={<FaceRecognition />} />
         <Route path="/pass" element={<FinalPass />} />
         <Route path="/verify" element={<Verification />} />

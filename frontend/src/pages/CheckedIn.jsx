@@ -1,13 +1,13 @@
 import { useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { useLocation, useNavigate } from 'react-router-dom';
-import { Fingerprint, Plane, ScanFace } from 'lucide-react';
-import { getSession } from '@/lib/session';
+import { useNavigate } from 'react-router-dom';
+import { CheckCircle2, ScanFace, ShieldCheck, Plane, ArrowRight, Ticket } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { getSession, saveSession } from '@/lib/session';
 
-export default function FinalPass() {
-  const location = useLocation();
+export default function CheckedIn() {
   const navigate = useNavigate();
-  const userData = location.state?.userData || getSession();
+  const userData = getSession();
 
   useEffect(() => {
     if (!userData) navigate('/', { replace: true });
@@ -15,21 +15,27 @@ export default function FinalPass() {
 
   if (!userData) return null;
 
+  const navigateWithSession = (path) => {
+    saveSession(userData);
+    navigate(path, { state: { userData } });
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      transition={{ duration: 0.6, ease: "easeOut" }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.5, ease: "easeOut" }}
       className="flex flex-col h-full w-full relative overflow-hidden"
     >
       {/* Cloud background */}
       <div className="absolute inset-0 z-0">
-        <img src="/bg-image.jpg" alt="" className="w-full h-full object-cover opacity-25 animate-drift" />
+        <img src="/bg-image.jpg" alt="" className="w-full h-full object-cover opacity-30 animate-drift" />
         <div className="absolute inset-0 bg-gradient-to-b from-white/80 via-white/90 to-white" />
       </div>
 
       <div className="relative z-10 flex flex-col items-center p-6 pt-10 flex-1 overflow-y-auto">
-        {/* Biometric pass active header */}
+        {/* Success header */}
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
@@ -37,11 +43,11 @@ export default function FinalPass() {
           className="flex items-center gap-4 w-full"
         >
           <div className="w-14 h-14 aspect-square shrink-0 rounded-full bg-emerald-500 flex items-center justify-center shadow-lg shadow-emerald-500/30">
-            <ScanFace className="w-7 h-7 text-white" />
+            <CheckCircle2 className="w-7 h-7 text-white" />
           </div>
           <div>
-            <h1 className="font-display text-2xl font-semibold text-foreground">Biometric Pass</h1>
-            <p className="text-muted-foreground text-sm mt-0.5">Active — you're all set for your flight!</p>
+            <h1 className="font-display text-2xl font-semibold text-foreground">You're checked in!</h1>
+            <p className="text-muted-foreground text-sm mt-0.5">Flight {userData.flightNumber || 'SG372'}</p>
           </div>
         </motion.div>
 
@@ -106,7 +112,7 @@ export default function FinalPass() {
               </div>
               <div>
                 <div className="text-[10px] text-muted-foreground uppercase tracking-wider">Passport</div>
-                <div className="text-sm font-medium text-foreground mt-0.5">***{userData.passportNumber?.slice(-4) || '1234'}</div>
+                <div className="text-sm font-medium text-foreground mt-0.5">***{userData.passportNumber?.slice(-4)}</div>
               </div>
               <div>
                 <div className="text-[10px] text-muted-foreground uppercase tracking-wider">Nationality</div>
@@ -116,34 +122,40 @@ export default function FinalPass() {
           </div>
         </motion.div>
 
-        {/* At the airport instructions */}
+        {/* Action buttons */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.6, duration: 0.5, ease: "easeOut" }}
-          className="w-full mt-6"
+          transition={{ delay: 0.5, duration: 0.5, ease: "easeOut" }}
+          className="flex flex-col gap-3 mt-6 w-full"
         >
-          <h2 className="text-sm font-semibold text-foreground mb-3">At the airport</h2>
-          <div className="space-y-3">
-            <div className="flex items-start gap-3">
-              <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0 mt-0.5">
-                <Fingerprint className="w-4 h-4 text-primary" />
-              </div>
-              <div>
-                <p className="text-sm font-medium text-foreground">Go to immigration</p>
-                <p className="text-xs text-muted-foreground">Look at the biometric camera — no passport needed, your face is your ID.</p>
-              </div>
-            </div>
-            <div className="flex items-start gap-3">
-              <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0 mt-0.5">
-                <Plane className="w-4 h-4 text-primary" />
-              </div>
-              <div>
-                <p className="text-sm font-medium text-foreground">Board your flight</p>
-                <p className="text-xs text-muted-foreground">Head to Gate {userData.gate || 'A7'} — scan your face at the gate to board.</p>
-              </div>
-            </div>
+          <p className="text-sm text-muted-foreground text-center">
+            Skip the queues with biometric boarding
+          </p>
+          <Button
+            size="lg"
+            className="w-full"
+            onClick={() => navigateWithSession('/face-scan')}
+            asChild
+          >
+            <motion.button whileTap={{ scale: 0.96 }} className="text-sm">
+              <ScanFace className="w-5 h-5 shrink-0" />
+              <span>Create Biometric Pass</span>
+              <ArrowRight className="w-4 h-4 ml-auto" />
+            </motion.button>
+          </Button>
+          <div className="flex items-center justify-center gap-1.5 text-xs text-muted-foreground">
+            <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />
+            <span>Encrypted & secure — your data is never shared</span>
           </div>
+          <Button
+            variant="ghost"
+            className="text-sm"
+            onClick={() => {}}
+          >
+            <Ticket className="w-4 h-4 shrink-0" />
+            Download Normal Boarding Ticket
+          </Button>
         </motion.div>
       </div>
     </motion.div>

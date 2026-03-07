@@ -4,11 +4,18 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { enrollFace } from '../api';
 import { Button } from '@/components/ui/button';
 import { ShieldCheck, Camera, Plane } from 'lucide-react';
+import { getSession } from '@/lib/session';
 
 export default function FaceRecognition() {
   const navigate = useNavigate();
   const location = useLocation();
-  const userData = location.state?.userData || { fullName: 'Unknown' };
+  const userData = location.state?.userData || getSession();
+
+  useEffect(() => {
+    if (!userData) navigate('/', { replace: true });
+  }, []);
+
+  if (!userData) return null;
 
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
