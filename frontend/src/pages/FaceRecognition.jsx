@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { enrollFace } from '../api';
+import { Button } from '@/components/ui/button';
 
 export default function FaceRecognition() {
   const navigate = useNavigate();
@@ -212,12 +213,13 @@ export default function FaceRecognition() {
         {scanStage === 'error' ? (
           <div className="space-y-3">
             <p className="font-mono text-xs text-red-400">{errorMsg}</p>
-            <button
+            <Button
+              variant="link"
               onClick={() => window.location.reload()}
-              className="font-mono text-xs text-cyan-400 underline cursor-pointer"
+              className="font-mono text-xs"
             >
               Retry
-            </button>
+            </Button>
           </div>
         ) : (
           <div className="font-mono text-[10px] uppercase tracking-widest text-slate-500 flex justify-center gap-1">
