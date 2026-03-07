@@ -13,9 +13,9 @@ export default function FinalPass() {
       initial={{ opacity: 0, y: 50 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.6, ease: "easeOut" }}
-      className="flex flex-col h-full bg-background px-5 py-8 overflow-y-auto sm:bg-card sm:border sm:border-border sm:rounded-2xl sm:shadow-sm sm:max-w-lg sm:mx-auto sm:my-12 sm:h-auto"
+      className="flex flex-col gap-6 h-full bg-background overflow-y-auto sm:bg-card sm:border sm:border-border sm:rounded-2xl sm:shadow-sm sm:max-w-lg sm:mx-auto sm:h-auto"
     >
-      <div className="text-center mb-6 flex flex-col items-center w-full">
+      <div className="text-center flex flex-col items-center w-full">
         <Badge variant="success" className="mb-3">
           <CheckCircle2 className="w-4 h-4" />
           Verified
@@ -63,7 +63,7 @@ export default function FinalPass() {
         </CardContent>
       </Card>
 
-      <div className="mt-3 w-full bg-green-50 rounded-xl p-3 flex items-center justify-center border border-green-200">
+      <div className="w-full bg-green-50 rounded-xl p-3 flex items-center justify-center border border-green-200">
         <div className="flex items-center gap-2">
           <div className="relative flex h-2.5 w-2.5">
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
@@ -73,7 +73,7 @@ export default function FinalPass() {
         </div>
       </div>
 
-      <div className="mt-6 w-full">
+      <div className="w-full">
         <h2 className="text-sm font-semibold text-foreground mb-3">At the airport</h2>
         <div className="space-y-3">
           <div className="flex items-start gap-3">
