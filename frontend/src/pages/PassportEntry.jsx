@@ -1,10 +1,36 @@
-import { useState } from 'react';
-import { motion } from 'framer-motion';
+import { useState, useRef, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { Network } from 'lucide-react';
+import { Network, ChevronDown, Search, Check } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
+
+const fetchCountries = async () => {
+  const response = await fetch('https://restcountries.com/v3.1/all?fields=name,flag');
+  return response.json();
+}
 
 export default function PassportEntry() {
   const navigate = useNavigate();
+  const { data: countries } = useQuery({ queryKey: ['countries'], queryFn: fetchCountries })
+
+  const [comboboxOpen, setComboboxOpen] = useState(false);
+  const [countrySearch, setCountrySearch] = useState('');
+  const comboboxRef = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (comboboxRef.current && !comboboxRef.current.contains(event.target)) {
+        setComboboxOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const filteredCountries = countries?.filter(country => 
+    country.name.common.toLowerCase().includes(countrySearch.toLowerCase())
+  ).sort((a, b) => a.name.common.localeCompare(b.name.common));
+
   const [formData, setFormData] = useState({
     fullName: '',
     passportNumber: '',
@@ -85,17 +111,66 @@ export default function PassportEntry() {
         </div>
 
         <div className="grid grid-cols-2 gap-4">
-          <div className="space-y-1.5">
+          <div className="space-y-1.5 relative" ref={comboboxRef}>
             <label className="text-[10px] font-mono text-slate-400 uppercase tracking-widest ml-1">Nationality</label>
-            <input
-              type="text"
-              name="nationality"
-              value={formData.nationality}
-              onChange={handleChange}
-              placeholder="USA"
-              className="w-full bg-slate-900/50 border border-slate-800 focus:border-cyan-500 rounded-xl px-4 py-3.5 outline-none text-white font-mono placeholder:text-slate-600 transition-colors uppercase shadow-inner"
-              required
-            />
+            <div 
+              className="w-full bg-slate-900/50 border border-slate-800 focus-within:border-cyan-500 rounded-xl px-4 py-3.5 flex justify-between items-center cursor-pointer transition-colors shadow-inner"
+              onClick={() => setComboboxOpen(!comboboxOpen)}
+            >
+              <span className={`font-mono uppercase text-sm w-full truncate ${formData.nationality ? 'text-white' : 'text-slate-600'}`}>
+                {formData.nationality || "Select Country"}
+              </span>
+              <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform ${comboboxOpen ? 'rotate-180' : ''}`} />
+            </div>
+
+            <AnimatePresence>
+              {comboboxOpen && (
+                <motion.div
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  transition={{ duration: 0.2 }}
+                  className="absolute z-50 top-[76px] left-[-20px] w-[220px] sm:w-[250px] md:w-full bg-[#020617] border border-cyan-500/30 rounded-xl shadow-[0_10px_40px_rgba(0,0,0,0.8)] overflow-hidden flex flex-col"
+                  style={{ maxHeight: '250px' }}
+                >
+                  <div className="p-3 border-b border-slate-800 flex items-center gap-2">
+                    <Search className="w-4 h-4 text-cyan-500" />
+                    <input
+                      type="text"
+                      className="bg-transparent border-none outline-none text-white font-mono text-sm w-full placeholder:text-slate-600"
+                      placeholder="Search country..."
+                      value={countrySearch}
+                      onChange={(e) => setCountrySearch(e.target.value)}
+                      onClick={(e) => e.stopPropagation()}
+                      autoFocus
+                    />
+                  </div>
+                  <div className="overflow-y-auto w-full flex-1 no-scrollbar p-1">
+                    {filteredCountries?.length === 0 ? (
+                      <div className="p-4 text-center text-slate-500 text-sm font-mono">No countries found</div>
+                    ) : (
+                      filteredCountries?.map((country) => (
+                        <div
+                          key={country.name.common}
+                          className={`px-3 py-2.5 flex items-center gap-3 cursor-pointer rounded-lg transition-colors ${formData.nationality === country.name.common ? 'bg-cyan-500/20 text-cyan-400' : 'hover:bg-slate-800/80 text-white'}`}
+                          onClick={() => {
+                            setFormData(prev => ({ ...prev, nationality: country.name.common }));
+                            setComboboxOpen(false);
+                            setCountrySearch('');
+                          }}
+                        >
+                          <span className="text-xl">{country.flag}</span>
+                          <span className="font-mono text-sm truncate">{country.name.common}</span>
+                          {formData.nationality === country.name.common && (
+                            <Check className="w-4 h-4 ml-auto text-cyan-400 shrink-0" />
+                          )}
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
 
           <div className="space-y-1.5">
@@ -118,8 +193,8 @@ export default function PassportEntry() {
             disabled={!isFormValid}
             whileTap={{ scale: 0.96 }}
             className={`w-full py-4 rounded-xl uppercase tracking-widest font-bold text-sm transition-all duration-300 relative overflow-hidden group ${isFormValid
-                ? 'bg-cyan-500 hover:bg-cyan-400 text-[#020617] shadow-[0_0_20px_rgba(34,211,238,0.4)] hover:shadow-[0_0_30px_rgba(34,211,238,0.6)] cursor-pointer'
-                : 'bg-slate-800 text-slate-500 border border-slate-700 cursor-not-allowed opacity-50'
+              ? 'bg-cyan-500 hover:bg-cyan-400 text-[#020617] shadow-[0_0_20px_rgba(34,211,238,0.4)] hover:shadow-[0_0_30px_rgba(34,211,238,0.6)] cursor-pointer'
+              : 'bg-slate-800 text-slate-500 border border-slate-700 cursor-not-allowed opacity-50'
               }`}
           >
             {isFormValid && (
