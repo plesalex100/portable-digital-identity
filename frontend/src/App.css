@@ -1,42 +1,286 @@
-#root {
-  max-width: 1280px;
+/* ===== App Shell Styles ===== */
+
+.app-shell {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ===== Header with back button ===== */
+.app-header {
+  display: flex;
+  align-items: center;
+  padding: var(--space-sm) var(--space-lg);
+  max-width: 480px;
+  width: 100%;
   margin: 0 auto;
-  padding: 2rem;
+}
+
+.back-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border: none;
+  background: var(--bg-glass);
+  color: var(--text-secondary);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  font-size: var(--font-lg);
+}
+
+.back-btn:hover {
+  background: var(--bg-glass-hover);
+  color: var(--text-primary);
+}
+
+/* ===== Row layout for form ===== */
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-md);
+}
+
+@media (max-width: 360px) {
+  .form-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ===== Password strength ===== */
+.password-strength {
+  display: flex;
+  gap: 4px;
+  margin-top: var(--space-xs);
+}
+
+.strength-bar {
+  flex: 1;
+  height: 3px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.1);
+  transition: background var(--transition-base);
+}
+
+.strength-bar.active.weak { background: var(--accent-red); }
+.strength-bar.active.medium { background: var(--accent-amber); }
+.strength-bar.active.strong { background: var(--accent-green); }
+
+/* ===== Scan Button ===== */
+.scan-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-sm);
+  width: 100%;
+  padding: var(--space-md);
+  background: rgba(139, 92, 246, 0.08);
+  border: 1px dashed rgba(139, 92, 246, 0.3);
+  border-radius: var(--radius-md);
+  color: var(--accent-purple);
+  font-family: var(--font-family);
+  font-size: var(--font-sm);
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--transition-base);
+  margin-bottom: var(--space-lg);
+}
+
+.scan-btn:hover {
+  background: rgba(139, 92, 246, 0.15);
+  border-color: rgba(139, 92, 246, 0.5);
+}
+
+/* ===== Loading spinner ===== */
+.spinner {
+  width: 20px;
+  height: 20px;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ===== Success checkmark ===== */
+.success-icon {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: rgba(16, 185, 129, 0.15);
+  border: 2px solid var(--accent-green);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28px;
+  margin: 0 auto var(--space-lg);
+  animation: successPop 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+@keyframes successPop {
+  from { transform: scale(0); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+/* ===== Flight info display ===== */
+.flight-info-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-md) 0;
+}
+
+.flight-airport {
   text-align: center;
 }
 
-.logo {
-  height: 6em;
-  padding: 1.5em;
-  will-change: filter;
-  transition: filter 300ms;
-}
-.logo:hover {
-  filter: drop-shadow(0 0 2em #646cffaa);
-}
-.logo.react:hover {
-  filter: drop-shadow(0 0 2em #61dafbaa);
+.flight-airport .code {
+  font-size: var(--font-2xl);
+  font-weight: 700;
+  color: var(--text-primary);
 }
 
-@keyframes logo-spin {
+.flight-airport .name {
+  font-size: var(--font-xs);
+  color: var(--text-muted);
+}
+
+.flight-route-line {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  padding: 0 var(--space-md);
+}
+
+.flight-route-line .line {
+  flex: 1;
+  height: 1px;
+  background: var(--border-color);
+}
+
+.flight-route-line .plane-icon {
+  font-size: var(--font-lg);
+  color: var(--accent-cyan);
+  margin: 0 var(--space-sm);
+}
+
+/* ===== Final AirPass Page Animations ===== */
+
+.final-check-container {
+  margin-bottom: var(--space-xl);
+}
+
+/* SVG circle loading animation */
+.final-check-circle {
+  stroke-dasharray: 339.292;
+  stroke-dashoffset: 339.292;
+  animation: circleLoad 1.8s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+.final-check-circle.done {
+  stroke-dashoffset: 0;
+}
+
+@keyframes circleLoad {
+  0% {
+    stroke-dashoffset: 339.292;
+  }
+  100% {
+    stroke-dashoffset: 0;
+  }
+}
+
+/* Circle fill */
+.final-check-fill {
+  opacity: 0;
+  transition: opacity 0.5s ease;
+}
+
+.final-check-fill.visible {
+  opacity: 1;
+}
+
+/* Checkmark draw animation */
+.final-check-mark {
+  stroke-dasharray: 80;
+  stroke-dashoffset: 80;
+  opacity: 0;
+  transition: opacity 0.1s ease;
+}
+
+.final-check-mark.visible {
+  opacity: 1;
+  animation: drawCheck 0.5s 0.15s cubic-bezier(0.65, 0, 0.35, 1) forwards;
+}
+
+@keyframes drawCheck {
   from {
-    transform: rotate(0deg);
+    stroke-dashoffset: 80;
   }
   to {
-    transform: rotate(360deg);
+    stroke-dashoffset: 0;
   }
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  a:nth-of-type(2) .logo {
-    animation: logo-spin infinite 20s linear;
-  }
+/* Title text animation */
+.final-title {
+  font-size: var(--font-2xl);
+  font-weight: 700;
+  background: var(--gradient-primary);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 0.6s ease, transform 0.6s ease;
+  margin-bottom: var(--space-md);
 }
 
-.card {
-  padding: 2em;
+.final-title.visible {
+  opacity: 1;
+  transform: translateY(0);
 }
 
-.read-the-docs {
-  color: #888;
+/* Subtitle text animation */
+.final-subtitle {
+  font-size: var(--font-base);
+  color: var(--text-secondary);
+  line-height: 1.7;
+  opacity: 0;
+  transform: translateY(16px);
+  transition: opacity 0.6s ease, transform 0.6s ease;
+  margin-bottom: var(--space-xl);
+}
+
+.final-subtitle.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Badge animation */
+.final-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: 10px 24px;
+  background: rgba(16, 185, 129, 0.08);
+  border: 1px solid rgba(16, 185, 129, 0.2);
+  border-radius: var(--radius-full);
+  font-size: var(--font-sm);
+  font-weight: 600;
+  color: var(--accent-green);
+  letter-spacing: 0.03em;
+  opacity: 0;
+  transform: scale(0.8);
+  transition: opacity 0.5s ease, transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.final-badge.visible {
+  opacity: 1;
+  transform: scale(1);
 }

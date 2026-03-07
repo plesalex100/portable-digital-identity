@@ -3,7 +3,7 @@ import cors from "cors";
 import dotenv from "dotenv";
 dotenv.config();
 
-import API from "./api/index.js";
+import API from "./api/index";
 
 if (!process.env.PORT) {
     throw new Error("Please provide a port in the .env file");
