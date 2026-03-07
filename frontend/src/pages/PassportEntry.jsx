@@ -1,8 +1,17 @@
-import { useState, useRef, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { useState } from 'react';
+import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { Network, ChevronDown, Search, Check } from 'lucide-react';
+import { Network, Check, ChevronDown, CalendarIcon } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
+import { format } from 'date-fns';
+
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Button } from '@/components/ui/button';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Command, CommandInput, CommandList, CommandEmpty, CommandGroup, CommandItem } from '@/components/ui/command';
+import { Calendar } from '@/components/ui/calendar';
+import { cn } from '@/lib/utils';
 
 const fetchCountries = async () => {
   const response = await fetch('https://restcountries.com/v3.1/all?fields=name,flag,cca2,cca3');
@@ -14,37 +23,13 @@ export default function PassportEntry() {
   const { data: countries } = useQuery({ queryKey: ['countries'], queryFn: fetchCountries })
 
   const [comboboxOpen, setComboboxOpen] = useState(false);
-  const [countrySearch, setCountrySearch] = useState('');
-  const comboboxRef = useRef(null);
-
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (comboboxRef.current && !comboboxRef.current.contains(event.target)) {
-        setComboboxOpen(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
-
-  const searchLower = countrySearch.toLowerCase();
-  const filteredCountries = countries?.filter(country => 
-    country.name.common.toLowerCase().includes(searchLower) ||
-    country.cca2?.toLowerCase().includes(searchLower) ||
-    country.cca3?.toLowerCase().includes(searchLower)
-  ).sort((a, b) => {
-    const aStarts = a.name.common.toLowerCase().startsWith(searchLower);
-    const bStarts = b.name.common.toLowerCase().startsWith(searchLower);
-    if (aStarts && !bStarts) return -1;
-    if (!aStarts && bStarts) return 1;
-    return a.name.common.localeCompare(b.name.common);
-  });
+  const [calendarOpen, setCalendarOpen] = useState(false);
 
   const [formData, setFormData] = useState({
     fullName: '',
     passportNumber: '',
     nationality: '',
-    expiryDate: ''
+    expiryDate: null
   });
 
   const handleChange = (e) => {
@@ -54,9 +39,10 @@ export default function PassportEntry() {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    // In a real app, you might save formData to context/state here
-    navigate('/face-scan', { state: { userData: formData } });
+    navigate('/face-scan', { state: { userData: { ...formData, expiryDate: formData.expiryDate ? format(formData.expiryDate, 'yyyy-MM-dd') : '' } } });
   };
+
+  const sortedCountries = countries?.slice().sort((a, b) => a.name.common.localeCompare(b.name.common));
 
   const isFormValid = formData.fullName && formData.passportNumber && formData.nationality && formData.expiryDate;
 
@@ -66,134 +52,134 @@ export default function PassportEntry() {
       animate={{ opacity: 1, x: 0 }}
       exit={{ opacity: 0, x: -50 }}
       transition={{ duration: 0.5, ease: "easeOut" }}
-      className="p-6 flex flex-col h-full bg-[#020617]"
+      className="p-6 flex flex-col h-full bg-background"
     >
-      <div className="mt-8 mb-10 flex flex-col items-center">
-        {/* Decorative Scan Chip Icon */}
-        <div className="relative mb-6">
-          <div className="absolute inset-0 bg-cyan-500/20 blur-xl rounded-full animate-pulse"></div>
-          <div className="w-20 h-20 rounded-2xl bg-slate-900 border border-cyan-500/50 flex items-center justify-center relative shadow-[0_0_15px_rgba(34,211,238,0.3)]">
-            <Network className="text-cyan-400 w-10 h-10 drop-shadow-[0_0_8px_rgba(34,211,238,0.8)]" />
-
-            {/* Corner brackets */}
-            <div className="absolute inset-1 border border-cyan-500/20 rounded-xl"></div>
-            <div className="absolute top-0 left-0 w-3 h-3 border-t-2 border-l-2 border-cyan-400 rounded-tl-xl"></div>
-            <div className="absolute top-0 right-0 w-3 h-3 border-t-2 border-r-2 border-cyan-400 rounded-tr-xl"></div>
-            <div className="absolute bottom-0 left-0 w-3 h-3 border-b-2 border-l-2 border-cyan-400 rounded-bl-xl"></div>
-            <div className="absolute bottom-0 right-0 w-3 h-3 border-b-2 border-r-2 border-cyan-400 rounded-br-xl"></div>
+      <div className="mt-8 mb-8 flex items-center gap-4">
+        <div className="relative shrink-0">
+          <div className="absolute inset-0 bg-primary/20 blur-xl rounded-full animate-pulse"></div>
+          <div className="w-12 h-12 rounded-xl bg-secondary border border-primary/50 flex items-center justify-center relative shadow-[0_0_15px_rgba(34,211,238,0.3)]">
+            <Network className="text-primary w-6 h-6 drop-shadow-[0_0_8px_rgba(34,211,238,0.8)]" />
+            <div className="absolute inset-0.5 border border-primary/20 rounded-lg"></div>
+            <div className="absolute top-0 left-0 w-2 h-2 border-t-2 border-l-2 border-primary rounded-tl-lg"></div>
+            <div className="absolute top-0 right-0 w-2 h-2 border-t-2 border-r-2 border-primary rounded-tr-lg"></div>
+            <div className="absolute bottom-0 left-0 w-2 h-2 border-b-2 border-l-2 border-primary rounded-bl-lg"></div>
+            <div className="absolute bottom-0 right-0 w-2 h-2 border-b-2 border-r-2 border-primary rounded-br-lg"></div>
           </div>
         </div>
 
-        <h1 className="text-2xl font-black text-white tracking-widest uppercase">
-          Digital Identity
-        </h1>
-        <p className="text-cyan-500/70 text-sm font-mono mt-2 tracking-wider">
-          DOCUMENT ACQUISITION
-        </p>
+        <div>
+          <h1 className="text-lg font-black text-foreground tracking-widest uppercase">
+            Digital Identity
+          </h1>
+          <p className="text-primary/70 text-xs font-mono mt-0.5 tracking-wider">
+            DOCUMENT ACQUISITION
+          </p>
+        </div>
       </div>
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-5 flex-1 w-full max-w-sm mx-auto">
         <div className="space-y-1.5">
-          <label className="text-[10px] font-mono text-slate-400 uppercase tracking-widest ml-1">Full Legal Name</label>
-          <input
-            type="text"
+          <Label>Full Legal Name</Label>
+          <Input
             name="fullName"
             value={formData.fullName}
             onChange={handleChange}
             placeholder="JOHN DOE"
-            className="w-full bg-slate-900/50 border border-slate-800 focus:border-cyan-500 rounded-xl px-4 py-3.5 outline-none text-white font-mono placeholder:text-slate-600 transition-colors shadow-inner"
+            className="uppercase"
             required
           />
         </div>
 
         <div className="space-y-1.5">
-          <label className="text-[10px] font-mono text-slate-400 uppercase tracking-widest ml-1">Passport Number</label>
-          <input
-            type="text"
+          <Label>Passport Number</Label>
+          <Input
             name="passportNumber"
             value={formData.passportNumber}
             onChange={handleChange}
             placeholder="A12345678"
-            className="w-full bg-slate-900/50 border border-slate-800 focus:border-cyan-500 rounded-xl px-4 py-3.5 outline-none text-white font-mono placeholder:text-slate-600 transition-colors uppercase shadow-inner"
+            className="uppercase"
             required
           />
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
-          <div className="space-y-1.5 relative" ref={comboboxRef}>
-            <label className="text-[10px] font-mono text-slate-400 uppercase tracking-widest ml-1">Nationality</label>
-            <div 
-              className="w-full bg-slate-900/50 border border-slate-800 focus-within:border-cyan-500 rounded-xl px-4 py-3.5 flex justify-between items-center cursor-pointer transition-colors shadow-inner"
-              onClick={() => setComboboxOpen(!comboboxOpen)}
-            >
-              <span className={`font-mono uppercase text-sm w-full truncate ${formData.nationality ? 'text-white' : 'text-slate-600'}`}>
-                {formData.nationality || "Select Country"}
-              </span>
-              <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform ${comboboxOpen ? 'rotate-180' : ''}`} />
-            </div>
+        <div className="space-y-1.5">
+          <Label>Nationality</Label>
+          <Popover open={comboboxOpen} onOpenChange={setComboboxOpen}>
+            <PopoverTrigger asChild>
+              <button
+                type="button"
+                role="combobox"
+                aria-expanded={comboboxOpen}
+                className={cn(
+                  "flex h-12 w-full items-center justify-between rounded-xl border border-input bg-secondary/50 px-4 py-3.5 font-mono text-sm shadow-inner transition-colors",
+                  formData.nationality ? "text-foreground" : "text-muted-foreground"
+                )}
+              >
+                <span className="uppercase truncate">
+                  {formData.nationality
+                    ? `${sortedCountries?.find(c => c.name.common === formData.nationality)?.flag || ''} ${formData.nationality}`
+                    : "Select Country"}
+                </span>
+                <ChevronDown className={cn("ml-2 h-4 w-4 shrink-0 text-muted-foreground transition-transform", comboboxOpen && "rotate-180")} />
+              </button>
+            </PopoverTrigger>
+            <PopoverContent className="p-0 overflow-hidden" align="start" style={{ width: 'var(--radix-popover-trigger-width)' }}>
+              <Command className="w-full">
+                <CommandInput placeholder="Search country..." />
+                <CommandList>
+                  <CommandEmpty>No country found.</CommandEmpty>
+                  <CommandGroup>
+                    {sortedCountries?.map((country) => (
+                      <CommandItem
+                        key={country.name.common}
+                        value={country.name.common}
+                        onSelect={(value) => {
+                          setFormData(prev => ({ ...prev, nationality: value }));
+                          setComboboxOpen(false);
+                        }}
+                      >
+                        <span className="text-xl">{country.flag}</span>
+                        <span className="font-mono text-sm truncate">{country.name.common}</span>
+                        {formData.nationality === country.name.common && (
+                          <Check className="ml-auto h-4 w-4 text-primary shrink-0" />
+                        )}
+                      </CommandItem>
+                    ))}
+                  </CommandGroup>
+                </CommandList>
+              </Command>
+            </PopoverContent>
+          </Popover>
+        </div>
 
-            <AnimatePresence>
-              {comboboxOpen && (
-                <motion.div
-                  initial={{ opacity: 0, y: -10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -10 }}
-                  transition={{ duration: 0.2 }}
-                  className="absolute z-50 top-[76px] left-[-20px] w-[220px] sm:w-[250px] md:w-full bg-[#020617] border border-cyan-500/30 rounded-xl shadow-[0_10px_40px_rgba(0,0,0,0.8)] overflow-hidden flex flex-col"
-                  style={{ maxHeight: '250px' }}
-                >
-                  <div className="p-3 border-b border-slate-800 flex items-center gap-2">
-                    <Search className="w-4 h-4 text-cyan-500" />
-                    <input
-                      type="text"
-                      className="bg-transparent border-none outline-none text-white font-mono text-sm w-full placeholder:text-slate-600"
-                      placeholder="Search country..."
-                      value={countrySearch}
-                      onChange={(e) => setCountrySearch(e.target.value)}
-                      onClick={(e) => e.stopPropagation()}
-                      autoFocus
-                    />
-                  </div>
-                  <div className="overflow-y-auto w-full flex-1 no-scrollbar p-1">
-                    {filteredCountries?.length === 0 ? (
-                      <div className="p-4 text-center text-slate-500 text-sm font-mono">No countries found</div>
-                    ) : (
-                      filteredCountries?.map((country) => (
-                        <div
-                          key={country.name.common}
-                          className={`px-3 py-2.5 flex items-center gap-3 cursor-pointer rounded-lg transition-colors ${formData.nationality === country.name.common ? 'bg-cyan-500/20 text-cyan-400' : 'hover:bg-slate-800/80 text-white'}`}
-                          onClick={() => {
-                            setFormData(prev => ({ ...prev, nationality: country.name.common }));
-                            setComboboxOpen(false);
-                            setCountrySearch('');
-                          }}
-                        >
-                          <span className="text-xl">{country.flag}</span>
-                          <span className="font-mono text-sm truncate">{country.name.common}</span>
-                          {formData.nationality === country.name.common && (
-                            <Check className="w-4 h-4 ml-auto text-cyan-400 shrink-0" />
-                          )}
-                        </div>
-                      ))
-                    )}
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
-
-          <div className="space-y-1.5">
-            <label className="text-[10px] font-mono text-slate-400 uppercase tracking-widest ml-1">Expiry Date</label>
-            <input
-              type="date"
-              name="expiryDate"
-              value={formData.expiryDate}
-              onChange={handleChange}
-              placeholder="MM/YY"
-              className="w-full bg-slate-900/50 border border-slate-800 focus:border-cyan-500 rounded-xl px-4 py-3.5 outline-none text-white font-mono placeholder:text-slate-600 transition-colors shadow-inner"
-              required
-            />
-          </div>
+        <div className="space-y-1.5">
+          <Label>Expiry Date</Label>
+          <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
+            <PopoverTrigger asChild>
+              <button
+                type="button"
+                className={cn(
+                  "flex h-12 w-full items-center rounded-xl border border-input bg-secondary/50 px-4 py-3.5 font-mono text-sm shadow-inner transition-colors",
+                  formData.expiryDate ? "text-foreground" : "text-muted-foreground"
+                )}
+              >
+                <CalendarIcon className="mr-3 h-4 w-4 text-primary" />
+                {formData.expiryDate ? format(formData.expiryDate, "PPP") : "Select expiry date"}
+              </button>
+            </PopoverTrigger>
+            <PopoverContent className="p-0 overflow-hidden" align="start" style={{ width: 'var(--radix-popover-trigger-width)' }}>
+              <Calendar
+                mode="single"
+                selected={formData.expiryDate}
+                onSelect={(date) => {
+                  setFormData(prev => ({ ...prev, expiryDate: date }));
+                  setCalendarOpen(false);
+                }}
+                disabled={(date) => date < new Date()}
+                initialFocus
+              />
+            </PopoverContent>
+          </Popover>
         </div>
 
         <div className="mt-auto pt-8 pb-4">
@@ -201,10 +187,12 @@ export default function PassportEntry() {
             type="submit"
             disabled={!isFormValid}
             whileTap={{ scale: 0.96 }}
-            className={`w-full py-4 rounded-xl uppercase tracking-widest font-bold text-sm transition-all duration-300 relative overflow-hidden group ${isFormValid
-              ? 'bg-cyan-500 hover:bg-cyan-400 text-[#020617] shadow-[0_0_20px_rgba(34,211,238,0.4)] hover:shadow-[0_0_30px_rgba(34,211,238,0.6)] cursor-pointer'
-              : 'bg-slate-800 text-slate-500 border border-slate-700 cursor-not-allowed opacity-50'
-              }`}
+            className={cn(
+              "w-full py-4 rounded-xl uppercase tracking-widest font-bold text-sm transition-all duration-300 relative overflow-hidden group cursor-pointer",
+              isFormValid
+                ? "bg-primary hover:bg-primary/90 text-primary-foreground shadow-[0_0_20px_rgba(34,211,238,0.4)] hover:shadow-[0_0_30px_rgba(34,211,238,0.6)]"
+                : "bg-secondary text-muted-foreground border border-border cursor-not-allowed opacity-50"
+            )}
           >
             {isFormValid && (
               <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-in-out"></div>
