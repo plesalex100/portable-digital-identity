@@ -27,6 +27,12 @@ const personSchema = new mongoose.Schema({
         default: "checked-in",
     },
     verificationScore: { type: Number, default: null },
+    metadata: {
+        type: {
+            isFakeUser: { type: Boolean, default: false },
+        },
+        default: {},
+    },
 });
 
 export default mongoose.model("Person", personSchema, "person");

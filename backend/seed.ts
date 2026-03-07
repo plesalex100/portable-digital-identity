@@ -113,6 +113,7 @@ function generatePerson(flight: typeof FLIGHTS[number]) {
         boardingTime,
         status,
         verificationScore: randomVerificationScore(status),
+        metadata: { isFakeUser: true },
     };
 }
 

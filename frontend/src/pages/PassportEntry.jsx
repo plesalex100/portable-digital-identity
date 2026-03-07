@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { Network, Check, ChevronDown, CalendarIcon } from 'lucide-react';
+import { Network, Check, ChevronDown, CalendarIcon, UserRound } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { format } from 'date-fns';
 
@@ -13,6 +13,22 @@ import { Command, CommandInput, CommandList, CommandEmpty, CommandGroup, Command
 import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
 
+const PRESET_USERS = [
+  { fullName: 'Ples Alexandru-Nicusor', passportNumber: 'R14827365', nationality: 'Romania', expiryDate: new Date('2029-08-15') },
+  { fullName: 'Raul Covaci', passportNumber: 'R27391048', nationality: 'Romania', expiryDate: new Date('2030-03-22') },
+  { fullName: 'Stefan Eduard', passportNumber: 'R58203947', nationality: 'Romania', expiryDate: new Date('2028-11-07') },
+  { fullName: 'Fanea Mihai', passportNumber: 'R63948172', nationality: 'Romania', expiryDate: new Date('2031-01-30') },
+  { fullName: 'Madar Bogdan', passportNumber: 'R41750283', nationality: 'Romania', expiryDate: new Date('2029-06-18') },
+];
+
+const SHARED_FLIGHT = {
+  flightNumber: 'LH372',
+  airline: 'Lufthansa',
+  departure: 'AMS',
+  arrival: 'FRA',
+  gate: 'A7',
+};
+
 const fetchCountries = async () => {
   const response = await fetch('https://restcountries.com/v3.1/all?fields=name,flag,cca2,cca3');
   return response.json();
@@ -22,8 +38,10 @@ export default function PassportEntry() {
   const navigate = useNavigate();
   const { data: countries } = useQuery({ queryKey: ['countries'], queryFn: fetchCountries })
 
+  const [userDropdownOpen, setUserDropdownOpen] = useState(false);
   const [comboboxOpen, setComboboxOpen] = useState(false);
   const [calendarOpen, setCalendarOpen] = useState(false);
+  const [selectedUser, setSelectedUser] = useState(null);
 
   const [formData, setFormData] = useState({
     fullName: '',
@@ -32,6 +50,17 @@ export default function PassportEntry() {
     expiryDate: null
   });
 
+  const handleUserSelect = (user) => {
+    setSelectedUser(user.fullName);
+    setFormData({
+      fullName: user.fullName,
+      passportNumber: user.passportNumber,
+      nationality: user.nationality,
+      expiryDate: user.expiryDate,
+    });
+    setUserDropdownOpen(false);
+  };
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
@@ -39,7 +68,7 @@ export default function PassportEntry() {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    navigate('/face-scan', { state: { userData: { ...formData, expiryDate: formData.expiryDate ? format(formData.expiryDate, 'yyyy-MM-dd') : '' } } });
+    navigate('/face-scan', { state: { userData: { ...formData, ...SHARED_FLIGHT, expiryDate: formData.expiryDate ? format(formData.expiryDate, 'yyyy-MM-dd') : '' } } });
   };
 
   const sortedCountries = countries?.slice().sort((a, b) => a.name.common.localeCompare(b.name.common));
@@ -78,6 +107,50 @@ export default function PassportEntry() {
       </div>
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-5 flex-1 w-full max-w-sm mx-auto">
+        <div className="space-y-1.5">
+          <Label>Passenger</Label>
+          <Popover open={userDropdownOpen} onOpenChange={setUserDropdownOpen}>
+            <PopoverTrigger asChild>
+              <button
+                type="button"
+                role="combobox"
+                aria-expanded={userDropdownOpen}
+                className={cn(
+                  "flex h-12 w-full items-center justify-between rounded-xl border border-input bg-secondary/50 px-4 py-3.5 font-mono text-sm shadow-inner transition-colors",
+                  selectedUser ? "text-foreground" : "text-muted-foreground"
+                )}
+              >
+                <span className="flex items-center gap-2 uppercase truncate">
+                  <UserRound className="h-4 w-4 text-primary shrink-0" />
+                  {selectedUser || "Select passenger"}
+                </span>
+                <ChevronDown className={cn("ml-2 h-4 w-4 shrink-0 text-muted-foreground transition-transform", userDropdownOpen && "rotate-180")} />
+              </button>
+            </PopoverTrigger>
+            <PopoverContent className="p-0 overflow-hidden" align="start" style={{ width: 'var(--radix-popover-trigger-width)' }}>
+              <Command className="w-full">
+                <CommandList>
+                  <CommandGroup>
+                    {PRESET_USERS.map((user) => (
+                      <CommandItem
+                        key={user.fullName}
+                        value={user.fullName}
+                        onSelect={() => handleUserSelect(user)}
+                      >
+                        <UserRound className="h-4 w-4 text-primary mr-2 shrink-0" />
+                        <span className="font-mono text-sm truncate">{user.fullName}</span>
+                        {selectedUser === user.fullName && (
+                          <Check className="ml-auto h-4 w-4 text-primary shrink-0" />
+                        )}
+                      </CommandItem>
+                    ))}
+                  </CommandGroup>
+                </CommandList>
+              </Command>
+            </PopoverContent>
+          </Popover>
+        </div>
+
         <div className="space-y-1.5">
           <Label>Full Legal Name</Label>
           <Input
