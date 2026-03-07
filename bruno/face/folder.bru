@@ -1,0 +1,31 @@
+meta {
+  name: face
+}
+
+vars:pre-request {
+  baseUrl: http://localhost:3000
+}
+
+docs {
+  # Face API
+
+  Base path: `/api/face`
+
+  All requests use `multipart/form-data` for image uploads.
+
+  **Image constraints**
+  - Allowed types: `image/jpeg`, `image/png`, `image/bmp`, `image/gif`
+  - Max file size: 6 MB per image
+  - Max images per enrollment: `{{faceMaxImages}}` (env: `FACE_MAX_IMAGES`)
+  - Each image must contain exactly one detectable face
+
+  **Environment variables required on the server**
+  | Variable | Default |
+  |---|---|
+  | `FACE_ENDPOINT` | — (required) |
+  | `FACE_API_KEY` | — (required) |
+  | `FACE_RECOGNITION_MODEL` | `recognition_04` |
+  | `FACE_PERSON_GROUP_ID` | `hacktech-2026` |
+  | `FACE_CONFIDENCE_THRESHOLD` | `0.6` |
+  | `FACE_MAX_IMAGES` | `10` |
+}

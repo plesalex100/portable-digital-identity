@@ -1,0 +1,50 @@
+meta {
+  name: Enroll Person
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{baseUrl}}/api/face/enroll
+  body: multipartForm
+  auth: none
+}
+
+body:multipart-form {
+  name: John Doe
+  images[]: @file(/path/to/photo1.jpg)
+  images[]: @file(/path/to/photo2.jpg)
+  images[]: @file(/path/to/photo3.jpg)
+}
+
+docs {
+  Enroll a new person by uploading one or more face images.
+
+  **Fields**
+  | Field | Type | Required | Description |
+  |---|---|---|---|
+  | `name` | string | Yes | Full name of the person |
+  | `images[]` | File[] | Yes | 1–`{{faceMaxImages}}` face images |
+
+  **Response 201**
+  ```json
+  {
+    "success": true,
+    "data": {
+      "personId": "<mongodb-id>",
+      "name": "Jane Doe",
+      "azurePersonId": "<azure-uuid>",
+      "enrolledAt": "2026-03-07T12:00:00.000Z",
+      "facesAdded": 2
+    }
+  }
+  ```
+
+  **Errors**
+  | Status | Code | Cause |
+  |---|---|---|
+  | 400 | — | Missing name, no images, or too many images |
+  | 422 | `NO_FACE_DETECTED` | An image had no detectable face |
+  | 422 | `MULTIPLE_FACES_DETECTED` | An image had more than one face |
+  | 500 | — | Unexpected server error |
+}

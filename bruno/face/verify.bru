@@ -1,0 +1,50 @@
+meta {
+  name: Verify Person
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{baseUrl}}/api/face/verify
+  body: multipartForm
+  auth: none
+}
+
+body:multipart-form {
+  image: @file(/path/to/photo.jpg)
+}
+
+docs {
+  Identify a person from a single face image.
+
+  **Fields**
+  | Field | Type | Required | Description |
+  |---|---|---|---|
+  | `image` | File | Yes | A single face image |
+
+  Only candidates above the confidence threshold (`{{faceConfidenceThreshold}}`, env: `FACE_CONFIDENCE_THRESHOLD`) are returned.
+
+  **Response 200**
+  ```json
+  {
+    "success": true,
+    "data": {
+      "personId": "<mongodb-id>",
+      "name": "Jane Doe",
+      "azurePersonId": "<azure-uuid>",
+      "enrolledAt": "2026-03-07T12:00:00.000Z",
+      "confidence": 0.87
+    }
+  }
+  ```
+
+  **Errors**
+  | Status | Code | Cause |
+  |---|---|---|
+  | 400 | — | No image provided |
+  | 404 | `UNKNOWN_FACE` | No enrolled person matched above threshold |
+  | 404 | `USER_NOT_FOUND` | Azure matched but no local DB record exists |
+  | 422 | `NO_FACE_DETECTED` | Image had no detectable face |
+  | 422 | `MULTIPLE_FACES_DETECTED` | Image had more than one face |
+  | 500 | — | Unexpected server error |
+}
