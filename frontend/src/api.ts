@@ -1,6 +1,26 @@
+/// <reference types="vite/client" />
+
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
-export const enrollFace = async (userData, imageBlob) => {
+interface UserData {
+  fullName?: string;
+  name?: string;
+  passportNumber?: string;
+  nationality?: string;
+  flightNumber?: string;
+  airline?: string;
+  departure?: string;
+  arrival?: string;
+  gate?: string;
+}
+
+interface EnrollResponse {
+  message?: string;
+  code?: string;
+  data?: unknown;
+}
+
+export const enrollFace = async (userData: UserData, imageBlob: Blob): Promise<EnrollResponse> => {
   const formData = new FormData();
   formData.append('name', userData.fullName || userData.name || '');
   formData.append('images', imageBlob, 'face.jpg');
@@ -20,21 +40,18 @@ export const enrollFace = async (userData, imageBlob) => {
   const data = await response.json();
 
   if (!response.ok) {
-    const error = new Error(data.message || 'Enrollment failed');
-    error.code = data.code;
-    error.data = data.data;
-    throw error;
+    console.error(data.message || 'Enrollment failed');
   }
 
   return data;
 };
 
-export const checkPassenger = async (passportNumber) => {
+export const checkPassenger = async (passportNumber: string) => {
   const response = await fetch(`${API_BASE}/api/passengers/check/${encodeURIComponent(passportNumber)}`);
   return response.json();
 };
 
-export const verifyFace = async (imageBlob, checkpoint = 'security') => {
+export const verifyFace = async (imageBlob: Blob, checkpoint = 'security') => {
   const formData = new FormData();
   formData.append('image', imageBlob, 'face.jpg');
   formData.append('checkpoint', checkpoint);
@@ -47,10 +64,7 @@ export const verifyFace = async (imageBlob, checkpoint = 'security') => {
   const data = await response.json();
 
   if (!response.ok) {
-    const error = new Error(data.message || 'Verification failed');
-    error.code = data.code;
-    error.data = data.data;
-    throw error;
+    console.error(data.message || 'Verification failed');
   }
 
   return data;
