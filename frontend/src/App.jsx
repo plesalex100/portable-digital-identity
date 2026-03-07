@@ -1,35 +1,36 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
+import { AnimatePresence } from 'framer-motion';
+import PassportEntry from './pages/PassportEntry';
+import FaceRecognition from './pages/FaceRecognition';
+import FinalPass from './pages/FinalPass';
 
-function App() {
-  const [count, setCount] = useState(0)
-
+function AnimatedRoutes() {
+  const location = useLocation();
+  
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.jsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
+    <AnimatePresence mode="wait">
+      <Routes location={location} key={location.pathname}>
+        <Route path="/" element={<PassportEntry />} />
+        <Route path="/face-scan" element={<FaceRecognition />} />
+        <Route path="/pass" element={<FinalPass />} />
+      </Routes>
+    </AnimatePresence>
+  );
 }
 
-export default App
+export default function App() {
+  return (
+    <Router>
+      <div className="min-h-screen bg-black sm:bg-slate-900 flex justify-center text-white font-sans selection:bg-cyan-500/30">
+        {/* Mobile App Viewport Constraints - specifically Dark Mode #020617 */}
+        <div className="w-full max-w-md bg-[#020617] h-[100dvh] relative shadow-[0_0_50px_rgba(8,145,178,0.15)] flex flex-col overflow-hidden sm:border-x sm:border-slate-800">
+          
+          <main className="flex-1 overflow-x-hidden overflow-y-auto scroll-smooth no-scrollbar relative w-full h-full">
+            <AnimatedRoutes />
+          </main>
+          
+        </div>
+      </div>
+    </Router>
+  );
+}
