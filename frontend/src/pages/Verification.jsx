@@ -26,6 +26,42 @@ const NEXT_STEP = {
   gate:            { text: 'Board your flight', useFlight: true },
 };
 
+const playChime = (type = 'success') => {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    if (type === 'success') {
+      [880, 1100, 1320].forEach((freq, i) => {
+        const g = ctx.createGain();
+        g.connect(ctx.destination);
+        const o = ctx.createOscillator();
+        o.connect(g);
+        o.frequency.value = freq;
+        o.type = 'sine';
+        const t = ctx.currentTime + i * 0.1;
+        g.gain.setValueAtTime(0.2, t);
+        g.gain.exponentialRampToValueAtTime(0.01, t + 0.25);
+        o.start(t);
+        o.stop(t + 0.25);
+        if (i === 2) o.onended = () => ctx.close();
+      });
+    } else {
+      // Error: descending tone
+      const o = ctx.createOscillator();
+      const g = ctx.createGain();
+      o.connect(g);
+      g.connect(ctx.destination);
+      o.frequency.setValueAtTime(440, ctx.currentTime);
+      o.frequency.linearRampToValueAtTime(220, ctx.currentTime + 0.3);
+      o.type = 'sine';
+      g.gain.setValueAtTime(0.25, ctx.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
+      o.start();
+      o.stop(ctx.currentTime + 0.3);
+      o.onended = () => ctx.close();
+    }
+  } catch (e) { /* audio not available */ }
+};
+
 export default function Verification() {
   const { trigger: haptic } = useWebHaptics();
   const videoRef = useRef(null);
@@ -179,6 +215,7 @@ export default function Verification() {
       setResult(data.data);
       setStage('verified');
       haptic('success');
+      playChime('success');
     } catch (err) {
       const msg = err.message || 'Verification failed';
       if (err.code === 'WRONG_CHECKPOINT_ORDER') {
@@ -186,14 +223,17 @@ export default function Verification() {
         setWrongOrderData(err.data);
         setErrorMsg(msg);
         haptic('error');
+        playChime('error');
       } else if (msg.includes('No matching person') || msg.includes('UNKNOWN_FACE') || err.code === 'UNKNOWN_FACE') {
         setStage('rejected');
         setErrorMsg('Identity not recognized');
         haptic('error');
+        playChime('error');
       } else {
         setStage('error');
         setErrorMsg(msg);
         haptic('error');
+        playChime('error');
       }
     }
   };
