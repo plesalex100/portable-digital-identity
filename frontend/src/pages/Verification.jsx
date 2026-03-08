@@ -6,10 +6,12 @@ import { verifyFace } from '../api';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
 
 const CHECKPOINTS = [
-  { id: 'security', label: 'Security Checkpoint' },
+  { id: 'security', label: 'Security Screening' },
   { id: 'immigration', label: 'Immigration Control' },
-  { id: 'boarding', label: 'Boarding Gate' },
+  { id: 'duty-free', label: 'Duty-Free Shops' },
   { id: 'lounge', label: 'Lounge Access' },
+  { id: 'gate', label: 'Boarding Gate' },
+  { id: 'boarding', label: 'Boarding' },
 ];
 
 export default function Verification() {

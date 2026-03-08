@@ -2,12 +2,12 @@ import mongoose from "mongoose";
 
 enum PersonStatus {
     CHECKED_IN = "checked-in",
-    SECURITY_SCREENING = "security-screening",
     SECURITY_CLEARED = "security-cleared",
+    IMMIGRATION_CLEARED = "immigration-cleared",
+    AT_DUTY_FREE = "at-duty-free",
+    AT_LOUNGE = "at-lounge",
     AT_GATE = "at-gate",
-    BOARDING = "boarding",
     BOARDED = "boarded",
-    FLAGGED = "flagged",
 }
 
 const personSchema = new mongoose.Schema({

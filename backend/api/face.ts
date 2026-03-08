@@ -137,20 +137,22 @@ router.post("/enroll", upload.array("images"), async (req, res) => {
 
 // Checkpoint flow: each checkpoint requires a minimum status and advances to a new status
 const CHECKPOINT_FLOW: Record<string, { requiredStatuses: string[]; nextStatus: PersonStatus; label: string }> = {
-    security:     { requiredStatuses: ["checked-in"],       nextStatus: PersonStatus.SECURITY_CLEARED, label: "Security Checkpoint" },
-    immigration:  { requiredStatuses: ["security-cleared"], nextStatus: PersonStatus.AT_GATE,          label: "Immigration Control" },
-    boarding:     { requiredStatuses: ["at-gate"],          nextStatus: PersonStatus.BOARDED,           label: "Boarding Gate" },
-    lounge:       { requiredStatuses: ["security-cleared", "at-gate"], nextStatus: PersonStatus.FLAGGED,       label: "Lounge Access" },
+    security:    { requiredStatuses: ["checked-in"],                                        nextStatus: PersonStatus.SECURITY_CLEARED,     label: "Security Screening" },
+    immigration: { requiredStatuses: ["security-cleared"],                                   nextStatus: PersonStatus.IMMIGRATION_CLEARED,  label: "Immigration Control" },
+    "duty-free": { requiredStatuses: ["immigration-cleared", "at-lounge"],                   nextStatus: PersonStatus.AT_DUTY_FREE,         label: "Duty-Free Shops" },
+    lounge:      { requiredStatuses: ["immigration-cleared", "at-duty-free"],                 nextStatus: PersonStatus.AT_LOUNGE,            label: "Lounge Access" },
+    gate:        { requiredStatuses: ["immigration-cleared", "at-duty-free", "at-lounge"],    nextStatus: PersonStatus.AT_GATE,              label: "Boarding Gate" },
+    boarding:    { requiredStatuses: ["at-gate"],                                             nextStatus: PersonStatus.BOARDED,              label: "Boarding" },
 };
 
 const STATUS_LABELS: Record<string, string> = {
-    "checked-in":        "Checked In",
-    "security-screening":"Security Screening",
-    "security-cleared":  "Security Cleared",
-    "at-gate":           "At Gate",
-    "boarding":          "Boarding",
-    "boarded":           "Boarded",
-    "flagged":           "Flagged",
+    "checked-in":           "Checked In",
+    "security-cleared":     "Security Cleared",
+    "immigration-cleared":  "Immigration Cleared",
+    "at-duty-free":         "At Duty-Free",
+    "at-lounge":            "At Lounge",
+    "at-gate":              "At Gate",
+    "boarded":              "Boarded",
 };
 
 router.post("/verify", upload.single("image"), async (req, res) => {

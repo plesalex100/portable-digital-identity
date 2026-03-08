@@ -26,7 +26,7 @@ export default function CheckedIn() {
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       transition={{ duration: 0.5, ease: "easeOut" }}
-      className="flex flex-col h-full w-full relative overflow-hidden"
+      className="flex flex-col min-h-screen w-full relative overflow-hidden"
     >
       {/* Cloud background */}
       <div className="absolute inset-0 z-0">
@@ -42,7 +42,7 @@ export default function CheckedIn() {
           transition={{ delay: 0.2, duration: 0.5, ease: "easeOut" }}
           className="flex items-center gap-4 w-full"
         >
-          <div className="w-14 h-14 aspect-square shrink-0 rounded-full bg-emerald-500 flex items-center justify-center shadow-lg shadow-emerald-500/30">
+          <div className="w-14 h-14 aspect-square shrink-0 rounded-full bg-emerald-500 flex items-center justify-center">
             <CheckCircle2 className="w-7 h-7 text-white" />
           </div>
           <div>
@@ -58,7 +58,7 @@ export default function CheckedIn() {
           transition={{ delay: 0.35, duration: 0.5, ease: "easeOut" }}
           className="w-full mt-6"
         >
-          <div className="bg-white rounded-2xl shadow-lg border border-border/50 overflow-hidden">
+          <div className="bg-white rounded-2xl border border-border/50 overflow-hidden">
             {/* Ticket header */}
             <div className="bg-white border-b border-border/40 px-5 py-4 flex items-center justify-between">
               <div className="flex items-center gap-3">
