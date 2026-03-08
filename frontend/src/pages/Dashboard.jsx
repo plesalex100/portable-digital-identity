@@ -21,7 +21,7 @@ const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
 const SIMULATION_PIPELINE = [
   'checked-in',
-  'passed-check-in',
+  'passed-security-gate',
   'passed-immigration',
   'at-duty-free',
   'at-lounge',
@@ -118,15 +118,13 @@ export default function Dashboard() {
     intervalRef.current = setInterval(() => {
       setSimPassengers((prev) => {
         const next = prev.map((p) => ({ ...p }));
-        const count = Math.floor(Math.random() * 3) + 1;
+        const count = Math.floor(Math.random() * 3) + 2;
         const indices = new Set();
         while (indices.size < Math.min(count, next.length)) {
           indices.add(Math.floor(Math.random() * next.length));
         }
         for (const i of indices) {
           const newStatus = getNextStatus(next[i].status);
-          // When looping back from gate to registered, assign a new _id
-          // so Framer Motion doesn't animate the card flying backwards
           if (next[i].status === 'passed-gate' && newStatus === 'checked-in') {
             next[i]._id = next[i]._id.split('--sim')[0] + '--sim' + Date.now() + '-' + i;
           }
@@ -134,7 +132,7 @@ export default function Dashboard() {
         }
         return next;
       });
-    }, 1500);
+    }, 615);
 
     return () => {
       if (intervalRef.current) {
@@ -171,7 +169,7 @@ export default function Dashboard() {
 
   const stats = useMemo(() => {
     const total = activePassengers.length;
-    const cleared = activePassengers.filter((p) => ['passed-check-in', 'passed-immigration', 'at-duty-free', 'at-lounge', 'passed-gate'].includes(p.status)).length;
+    const cleared = activePassengers.filter((p) => ['passed-security-gate', 'passed-immigration', 'at-duty-free', 'at-lounge', 'passed-gate'].includes(p.status)).length;
     const atGate = activePassengers.filter((p) => ['passed-gate'].includes(p.status)).length;
     const flightCount = new Set(activePassengers.map((p) => p.flightNumber)).size;
     return { total, cleared, atGate, flights: flightCount };

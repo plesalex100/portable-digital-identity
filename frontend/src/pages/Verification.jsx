@@ -10,7 +10,7 @@ import { useWebHaptics } from 'web-haptics/react';
 const READY_HOLD_MS = 300; // Brief hold to avoid accidental captures
 
 const CHECKPOINTS = [
-  { id: 'check-in', label: 'Check-In' },
+  { id: 'security-gate', label: 'Security Gate' },
   { id: 'immigration', label: 'Immigration Control' },
   { id: 'duty-free', label: 'Duty-Free Shops' },
   { id: 'lounge', label: 'Lounge Access' },

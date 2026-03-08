@@ -4,10 +4,10 @@ import { ChevronRight, AlertTriangle, ShoppingBag, Armchair } from 'lucide-react
 import { Badge } from '@/components/ui/badge';
 
 const LANE_CONFIG = {
-  'checked-in':         { label: 'Registered',        color: 'bg-blue-500',    text: 'text-blue-700',    bg: 'bg-blue-50',    border: 'border-blue-200',    ring: 'ring-blue-200' },
-  'passed-check-in':    { label: 'Passed Check-In',   color: 'bg-emerald-500', text: 'text-emerald-700', bg: 'bg-emerald-50', border: 'border-emerald-200', ring: 'ring-emerald-200' },
-  'passed-immigration': { label: 'Passed Immigration', color: 'bg-teal-500',   text: 'text-teal-700',    bg: 'bg-teal-50',    border: 'border-teal-200',    ring: 'ring-teal-200' },
-  'passed-gate':        { label: 'Passed Gate',        color: 'bg-sky-500',     text: 'text-sky-700',     bg: 'bg-sky-50',     border: 'border-sky-200',     ring: 'ring-sky-200' },
+  'checked-in':             { label: 'Registered',      color: 'bg-blue-500',    text: 'text-blue-700',    bg: 'bg-blue-50',    border: 'border-blue-200',    ring: 'ring-blue-200' },
+  'passed-security-gate':   { label: 'Security Gate',   color: 'bg-emerald-500', text: 'text-emerald-700', bg: 'bg-emerald-50', border: 'border-emerald-200', ring: 'ring-emerald-200' },
+  'passed-immigration':     { label: 'Immigration',     color: 'bg-teal-500',    text: 'text-teal-700',    bg: 'bg-teal-50',    border: 'border-teal-200',    ring: 'ring-teal-200' },
+  'passed-gate':            { label: 'Gate',            color: 'bg-sky-500',     text: 'text-sky-700',     bg: 'bg-sky-50',     border: 'border-sky-200',     ring: 'ring-sky-200' },
 };
 const LANE_ORDER = Object.keys(LANE_CONFIG);
 
@@ -141,6 +141,7 @@ function getLaneForStatus(status) {
   if (LANE_CONFIG[status]) return status;
   if (status === 'at-duty-free' || status === 'at-lounge') return 'passed-immigration';
   return 'checked-in';
+
 }
 
 export default function QueueVisualization({ passengers = [], search = '' }) {

@@ -2,7 +2,7 @@ import mongoose from "mongoose";
 
 enum PersonStatus {
     CHECKED_IN = "checked-in",
-    PASSED_CHECK_IN = "passed-check-in",
+    PASSED_SECURITY_GATE = "passed-security-gate",
     PASSED_IMMIGRATION = "passed-immigration",
     AT_DUTY_FREE = "at-duty-free",
     AT_LOUNGE = "at-lounge",

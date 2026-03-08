@@ -127,7 +127,7 @@ const FLIGHTS = [
 
 const STATUSES = [
     "checked-in",
-    "passed-check-in",
+    "passed-security-gate",
     "passed-immigration",
     "at-duty-free",
     "at-lounge",

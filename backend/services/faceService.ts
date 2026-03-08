@@ -47,12 +47,14 @@ function getS3Client(): S3Client {
  * Detect faces in an image buffer. Throws if zero or multiple faces are found.
  */
 export async function detectSingleFace(imageBuffer: Buffer): Promise<void> {
+    const start = performance.now();
     const command = new DetectFacesCommand({
         Image: { Bytes: imageBuffer },
         Attributes: ["DEFAULT"],
     });
 
     const response = await getRekognitionClient().send(command);
+    console.log(`[verify-timing] detectSingleFace: ${(performance.now() - start).toFixed(0)}ms`);
     const faces = response.FaceDetails ?? [];
 
     if (faces.length === 0) {
@@ -169,44 +171,82 @@ export interface CompareResult {
 export async function compareFaceAgainstEnrolled(
     imageBuffer: Buffer,
 ): Promise<CompareResult | null> {
+    const totalStart = performance.now();
     const config = getFaceConfig();
+
+    const listStart = performance.now();
     const personIds = await listAllPersonIds();
+    console.log(`[verify-timing] listAllPersonIds: ${(performance.now() - listStart).toFixed(0)}ms (${personIds.length} persons)`);
 
     if (personIds.length === 0) {
         return null;
     }
 
-    let bestMatch: CompareResult | null = null;
+    // Gather all face keys in parallel
+    const gatherStart = performance.now();
+    const personFaceKeys = await Promise.all(
+        personIds.map(async (personId) => {
+            const keys = await listFaceKeys(personId);
+            return { personId, keys };
+        }),
+    );
+    const totalFaces = personFaceKeys.reduce((sum, p) => sum + p.keys.length, 0);
+    console.log(`[verify-timing] listFaceKeys (all persons): ${(performance.now() - gatherStart).toFixed(0)}ms (${totalFaces} total faces)`);
 
-    for (const personId of personIds) {
-        const faceKeys = await listFaceKeys(personId);
+    // Compare all faces in parallel
+    const compareStart = performance.now();
+    const allComparisons: Promise<CompareResult | null>[] = [];
 
-        for (const key of faceKeys) {
-            try {
-                const enrolledImage = await downloadFaceImage(key);
+    for (const { personId, keys } of personFaceKeys) {
+        for (const key of keys) {
+            allComparisons.push(
+                (async (): Promise<CompareResult | null> => {
+                    try {
+                        const dlStart = performance.now();
+                        const enrolledImage = await downloadFaceImage(key);
+                        const dlTime = performance.now() - dlStart;
 
-                const command = new CompareFacesCommand({
-                    SourceImage: { Bytes: imageBuffer },
-                    TargetImage: { Bytes: enrolledImage },
-                    SimilarityThreshold: config.confidenceThreshold,
-                });
+                        const rkStart = performance.now();
+                        const command = new CompareFacesCommand({
+                            SourceImage: { Bytes: imageBuffer },
+                            TargetImage: { Bytes: enrolledImage },
+                            SimilarityThreshold: config.confidenceThreshold,
+                        });
+                        const response = await getRekognitionClient().send(command);
+                        const rkTime = performance.now() - rkStart;
 
-                const response = await getRekognitionClient().send(command);
-                const matches = response.FaceMatches ?? [];
+                        console.log(`[verify-timing]   ${key}: download=${dlTime.toFixed(0)}ms, rekognition=${rkTime.toFixed(0)}ms`);
 
-                for (const match of matches) {
-                    const similarity = match.Similarity ?? 0;
-                    if (!bestMatch || similarity > bestMatch.confidence) {
-                        bestMatch = { personId, confidence: similarity };
+                        const matches = response.FaceMatches ?? [];
+                        let best: CompareResult | null = null;
+                        for (const match of matches) {
+                            const similarity = match.Similarity ?? 0;
+                            if (!best || similarity > best.confidence) {
+                                best = { personId, confidence: similarity };
+                            }
+                        }
+                        return best;
+                    } catch (err) {
+                        console.warn(`CompareFaces failed for ${key}:`, (err as Error).message);
+                        return null;
                     }
-                }
-            } catch (err) {
-                // Skip images that fail comparison (e.g. no face in enrolled image)
-                console.warn(`CompareFaces failed for ${key}:`, (err as Error).message);
-            }
+                })(),
+            );
         }
     }
 
+    const results = await Promise.all(allComparisons);
+    console.log(`[verify-timing] all comparisons: ${(performance.now() - compareStart).toFixed(0)}ms`);
+
+    // Find best match across all results
+    let bestMatch: CompareResult | null = null;
+    for (const result of results) {
+        if (result && (!bestMatch || result.confidence > bestMatch.confidence)) {
+            bestMatch = result;
+        }
+    }
+
+    console.log(`[verify-timing] TOTAL compareFaceAgainstEnrolled: ${(performance.now() - totalStart).toFixed(0)}ms | match=${bestMatch ? `${bestMatch.personId} (${bestMatch.confidence.toFixed(1)}%)` : 'none'}`);
     return bestMatch;
 }
 
