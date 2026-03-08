@@ -44,16 +44,15 @@ const FLIGHTS = [
 
 const STATUSES = [
     "checked-in",
-    "security-cleared",
-    "immigration-cleared",
+    "passed-check-in",
+    "passed-immigration",
     "at-duty-free",
     "at-lounge",
-    "at-gate",
-    "boarded",
+    "passed-gate",
 ] as const;
 
 // Weighted distribution: most passengers are further along in the flow
-const STATUS_WEIGHTS = [8, 12, 18, 10, 8, 24, 20];
+const STATUS_WEIGHTS = [10, 15, 20, 15, 12, 28];
 
 
 function pick<T>(arr: T[]): T {
