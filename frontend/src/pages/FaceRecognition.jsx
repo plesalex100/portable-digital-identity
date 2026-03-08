@@ -1,10 +1,20 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { enrollFace } from '../api';
 import { Button } from '@/components/ui/button';
-import { ShieldCheck, Camera, Plane } from 'lucide-react';
+import { ShieldCheck, Camera, Plane, Check, Loader2 } from 'lucide-react';
 import { getSession } from '@/lib/session';
+import { useFaceDetection } from '@/hooks/useFaceDetection';
+import { useWebHaptics } from 'web-haptics/react';
+
+const POSES = [
+  { key: 'front', label: 'Look straight at the camera', icon: '正' },
+  { key: 'left', label: 'Turn your head left', icon: '←' },
+  { key: 'right', label: 'Turn your head right', icon: '→' },
+];
+
+const POSE_HOLD_MS = 1000; // Hold correct pose for 1s to capture
 
 export default function FaceRecognition() {
   const navigate = useNavigate();
@@ -17,24 +27,28 @@ export default function FaceRecognition() {
 
   if (!userData) return null;
 
+  const { trigger: haptic } = useWebHaptics();
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
   const streamRef = useRef(null);
+  const poseTimerRef = useRef(null);
+  const capturedImagesRef = useRef([]);
 
-  // Stages: 'idle' -> 'detecting' -> 'analyzing' -> 'hashing' -> 'complete' -> 'error'
+  // Stages: idle | loading-model | pose-front | pose-left | pose-right | uploading | complete | error | duplicate
   const [scanStage, setScanStage] = useState('idle');
-  const [progress, setProgress] = useState(0);
+  const [capturedImages, setCapturedImages] = useState([]);
+  const [currentPoseIndex, setCurrentPoseIndex] = useState(0);
+  const [poseHoldProgress, setPoseHoldProgress] = useState(0);
   const [errorMsg, setErrorMsg] = useState('');
+  const [cameraReady, setCameraReady] = useState(false);
 
-  const statusConfig = {
-    idle: { text: 'Starting camera...', color: 'text-muted-foreground' },
-    detecting: { text: 'Looking for your face...', color: 'text-primary' },
-    analyzing: { text: 'Capturing biometric data...', color: 'text-primary' },
-    hashing: { text: 'Processing...', color: 'text-primary' },
-    complete: { text: 'Biometric pass created!', color: 'text-emerald-600' },
-    error: { text: 'Enrollment failed', color: 'text-red-500' },
-    duplicate: { text: 'Already checked in', color: 'text-amber-500' },
-  };
+  const isPoseStage = scanStage.startsWith('pose-');
+  const detectionEnabled = cameraReady && (isPoseStage || scanStage === 'loading-model');
+
+  const { isModelLoaded, faceDetected, currentPose, isCentered } = useFaceDetection({
+    videoRef,
+    enabled: detectionEnabled,
+  });
 
   const stopCamera = useCallback(() => {
     if (streamRef.current) {
@@ -75,9 +89,8 @@ export default function FaceRecognition() {
         if (videoRef.current) {
           videoRef.current.srcObject = stream;
         }
-        setTimeout(() => {
-          if (!cancelled) setScanStage('detecting');
-        }, 1500);
+        setCameraReady(true);
+        setScanStage('loading-model');
       } catch (err) {
         console.error('Camera access denied:', err);
         if (!cancelled) {
@@ -94,60 +107,154 @@ export default function FaceRecognition() {
     };
   }, [stopCamera]);
 
-  // Run scan stages and enroll
+  // Transition from loading-model to first pose when model is ready
   useEffect(() => {
-    let interval;
+    if (scanStage === 'loading-model' && isModelLoaded) {
+      setScanStage('pose-front');
+    }
+  }, [scanStage, isModelLoaded]);
 
-    if (scanStage === 'detecting' || scanStage === 'analyzing' || scanStage === 'hashing') {
-      interval = setInterval(() => {
-        setProgress(p => {
-          if (p >= 100) return 100;
-          return p + 2;
-        });
-      }, 50);
+  // Keep ref in sync with state
+  useEffect(() => {
+    capturedImagesRef.current = capturedImages;
+  }, [capturedImages]);
 
-      if (progress > 30 && scanStage === 'detecting') setScanStage('analyzing');
-
-      if (progress >= 60 && scanStage === 'analyzing') {
-        setScanStage('hashing');
-        (async () => {
-          try {
-            const blob = await capturePhoto();
-            if (!blob) throw new Error('Failed to capture photo');
-            await enrollFace(userData, blob);
-            setProgress(100);
-            setScanStage('complete');
-            stopCamera();
-            setTimeout(() => {
-              navigate('/pass', { state: { userData } });
-            }, 1000);
-          } catch (err) {
-            console.error('Enrollment failed:', err);
-            if (err.code === 'ALREADY_CHECKED_IN') {
-              setErrorMsg(err.message || 'This passenger is already checked in');
-              setScanStage('duplicate');
-              stopCamera();
-              setTimeout(() => {
-                navigate('/pass', { state: { userData } });
-              }, 2000);
-              return;
-            }
-            setErrorMsg(err.message || 'Enrollment failed');
-            setScanStage('error');
-            stopCamera();
-          }
-        })();
+  // Clear timer when pose stage changes
+  useEffect(() => {
+    return () => {
+      if (poseTimerRef.current) {
+        clearTimeout(poseTimerRef.current);
+        poseTimerRef.current = null;
       }
+    };
+  }, [scanStage]);
+
+  // Handle pose detection and auto-capture
+  useEffect(() => {
+    if (!isPoseStage) {
+      setPoseHoldProgress(0);
+      return;
     }
 
-    return () => clearInterval(interval);
-  }, [scanStage, progress, navigate, userData, capturePhoto, stopCamera]);
+    const expectedPose = POSES[currentPoseIndex].key;
+    const poseMatches = currentPose === expectedPose && faceDetected && isCentered;
+
+    if (poseMatches) {
+      if (!poseTimerRef.current) {
+        const startTime = Date.now();
+        const progressInterval = setInterval(() => {
+          const elapsed = Date.now() - startTime;
+          setPoseHoldProgress(Math.min(elapsed / POSE_HOLD_MS, 1));
+        }, 50);
+
+        poseTimerRef.current = setTimeout(async () => {
+          clearInterval(progressInterval);
+          setPoseHoldProgress(1);
+          poseTimerRef.current = null;
+
+          // Capture
+          const blob = await capturePhoto();
+          if (blob) {
+            haptic('nudge');
+            const newImages = [...capturedImagesRef.current, blob];
+            setCapturedImages(newImages);
+            capturedImagesRef.current = newImages;
+
+            if (newImages.length >= 3) {
+              // All poses captured, upload
+              setScanStage('uploading');
+              try {
+                const response = await enrollFace(userData, newImages);
+                if (response.code === 'ALREADY_CHECKED_IN') {
+                  setErrorMsg(response.message || 'This passenger is already checked in');
+                  setScanStage('duplicate');
+                  haptic('nudge');
+                  stopCamera();
+                  setTimeout(() => navigate('/pass', { state: { userData } }), 2000);
+                  return;
+                }
+                setScanStage('complete');
+                haptic('success');
+                stopCamera();
+                setTimeout(() => navigate('/pass', { state: { userData } }), 1000);
+              } catch (err) {
+                if (err.code === 'ALREADY_CHECKED_IN') {
+                  setErrorMsg(err.message || 'This passenger is already checked in');
+                  setScanStage('duplicate');
+                  haptic('nudge');
+                  stopCamera();
+                  setTimeout(() => navigate('/pass', { state: { userData } }), 2000);
+                  return;
+                }
+                setErrorMsg(err.message || 'Enrollment failed');
+                setScanStage('error');
+                haptic('error');
+                stopCamera();
+              }
+            } else {
+              // Move to next pose
+              const nextIndex = currentPoseIndex + 1;
+              setCurrentPoseIndex(nextIndex);
+              setScanStage(`pose-${POSES[nextIndex].key}`);
+              setPoseHoldProgress(0);
+            }
+          }
+        }, POSE_HOLD_MS);
+      }
+    } else {
+      // Pose doesn't match, reset timer
+      if (poseTimerRef.current) {
+        clearTimeout(poseTimerRef.current);
+        poseTimerRef.current = null;
+      }
+      setPoseHoldProgress(0);
+    }
+  }, [isPoseStage, currentPose, faceDetected, isCentered, currentPoseIndex]);
+
+  // Cleanup timer on unmount
+  useEffect(() => {
+    return () => {
+      clearTimeout(poseTimerRef.current);
+    };
+  }, []);
+
+  const progress = scanStage === 'uploading' || scanStage === 'complete'
+    ? 100
+    : ((capturedImages.length + poseHoldProgress) / 3) * 100;
 
   const circumference = 2 * Math.PI * 145;
   const strokeDashoffset = circumference - (progress / 100) * circumference;
 
-  const ringColor = scanStage === 'complete' ? '#22c55e' : scanStage === 'error' ? '#f87171' : scanStage === 'duplicate' ? '#f59e0b' : '#FACD2C';
-  const glowColor = scanStage === 'complete' ? 'shadow-emerald-500/30' : scanStage === 'error' ? 'shadow-red-500/30' : scanStage === 'duplicate' ? 'shadow-amber-500/30' : 'shadow-primary/20';
+  const ringColor = scanStage === 'complete' ? '#22c55e'
+    : scanStage === 'error' ? '#f87171'
+    : scanStage === 'duplicate' ? '#f59e0b'
+    : '#FACD2C';
+
+  const glowColor = scanStage === 'complete' ? 'shadow-emerald-500/30'
+    : scanStage === 'error' ? 'shadow-red-500/30'
+    : scanStage === 'duplicate' ? 'shadow-amber-500/30'
+    : 'shadow-primary/20';
+
+  const statusText = () => {
+    if (scanStage === 'idle') return 'Starting camera...';
+    if (scanStage === 'loading-model') return 'Loading face detection...';
+    if (scanStage === 'uploading') return 'Processing...';
+    if (scanStage === 'complete') return 'Biometric pass created!';
+    if (scanStage === 'error') return 'Enrollment failed';
+    if (scanStage === 'duplicate') return 'Already checked in';
+    if (isPoseStage) {
+      if (!faceDetected) return 'Position your face in the frame';
+      if (!isCentered) return 'Center your face';
+      if (currentPose !== POSES[currentPoseIndex].key) return POSES[currentPoseIndex].label;
+      return 'Hold still...';
+    }
+    return '';
+  };
+
+  const statusColor = scanStage === 'complete' ? 'text-emerald-600'
+    : scanStage === 'error' ? 'text-red-500'
+    : scanStage === 'duplicate' ? 'text-amber-500'
+    : 'text-primary';
 
   return (
     <motion.div
@@ -188,10 +295,22 @@ export default function FaceRecognition() {
 
         {/* Status text */}
         <div className="mt-2 h-6 flex justify-center items-center">
-          <p className={`text-sm font-medium transition-colors duration-300 ${statusConfig[scanStage].color}`}>
-            {statusConfig[scanStage].text}
+          <p className={`text-sm font-medium transition-colors duration-300 ${statusColor}`}>
+            {statusText()}
           </p>
         </div>
+
+        {/* Pose instruction */}
+        {isPoseStage && (
+          <motion.div
+            key={currentPoseIndex}
+            initial={{ opacity: 0, y: 5 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mt-1 text-xs text-muted-foreground font-medium"
+          >
+            {POSES[currentPoseIndex].label}
+          </motion.div>
+        )}
 
         {/* Flight info mini strip */}
         <motion.div
@@ -234,7 +353,7 @@ export default function FaceRecognition() {
               style={{
                 strokeDasharray: circumference,
                 strokeDashoffset: strokeDashoffset,
-                transition: 'stroke-dashoffset 0.1s ease-out',
+                transition: 'stroke-dashoffset 0.3s ease-out',
                 filter: `drop-shadow(0 0 6px ${ringColor}40)`,
               }}
             />
@@ -250,8 +369,8 @@ export default function FaceRecognition() {
               className="absolute inset-0 w-full h-full object-cover scale-x-[-1]"
             />
 
-            {/* Scanning line */}
-            {scanStage !== 'idle' && scanStage !== 'complete' && scanStage !== 'error' && scanStage !== 'duplicate' && (
+            {/* Scanning line during pose stages */}
+            {isPoseStage && faceDetected && (
               <motion.div
                 animate={{ y: ["-100%", "300%", "-100%"] }}
                 transition={{ duration: 2.5, ease: "linear", repeat: Infinity }}
@@ -276,7 +395,19 @@ export default function FaceRecognition() {
               ))}
             </div>
 
-            {/* Success/error overlay */}
+            {/* Uploading overlay */}
+            {scanStage === 'uploading' && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="absolute inset-0 bg-black/50 flex flex-col items-center justify-center z-30"
+              >
+                <Loader2 className="w-10 h-10 text-white animate-spin" />
+                <span className="text-white text-sm font-medium mt-2">Processing...</span>
+              </motion.div>
+            )}
+
+            {/* Success overlay */}
             {scanStage === 'complete' && (
               <motion.div
                 initial={{ opacity: 0 }}
@@ -290,28 +421,43 @@ export default function FaceRecognition() {
           </div>
         </motion.div>
 
+        {/* Pose progress dots */}
+        <div className="flex items-center gap-3 mt-5">
+          {POSES.map((pose, i) => (
+            <div key={pose.key} className="flex items-center gap-1.5">
+              <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold border-2 transition-all duration-300 ${
+                i < capturedImages.length
+                  ? 'bg-emerald-500 border-emerald-500 text-white'
+                  : i === currentPoseIndex && isPoseStage
+                  ? 'border-primary text-primary bg-primary/10'
+                  : 'border-border text-muted-foreground bg-background'
+              }`}>
+                {i < capturedImages.length ? (
+                  <Check className="w-3.5 h-3.5" />
+                ) : (
+                  i + 1
+                )}
+              </div>
+              {i < POSES.length - 1 && (
+                <div className={`w-6 h-0.5 ${i < capturedImages.length ? 'bg-emerald-500' : 'bg-border'}`} />
+              )}
+            </div>
+          ))}
+        </div>
+        <div className="text-[10px] text-muted-foreground mt-1.5">
+          {isPoseStage ? `Step ${currentPoseIndex + 1} of 3` : scanStage === 'complete' ? 'All steps complete' : ''}
+        </div>
+
         {/* Passenger name tag */}
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.6 }}
-          className="mt-6 text-center"
+          className="mt-4 text-center"
         >
           <div className="text-[10px] uppercase tracking-widest text-muted-foreground mb-1">Passenger</div>
           <div className="text-sm font-bold text-foreground">{userData.fullName}</div>
         </motion.div>
-
-        {/* Progress bar (linear, below camera) */}
-        <div className="w-48 mt-4">
-          <div className="h-1 bg-border/50 rounded-full overflow-hidden">
-            <motion.div
-              className="h-full rounded-full"
-              style={{ backgroundColor: ringColor, width: `${progress}%` }}
-              transition={{ duration: 0.1 }}
-            />
-          </div>
-          <div className="text-[10px] text-muted-foreground text-center mt-1.5">{Math.round(progress)}%</div>
-        </div>
 
         {/* Bottom status area */}
         <div className="mt-auto pt-4 w-full text-center">
@@ -333,9 +479,14 @@ export default function FaceRecognition() {
                 Retry
               </Button>
             </div>
+          ) : scanStage === 'loading-model' ? (
+            <p className="text-xs text-muted-foreground flex items-center justify-center gap-1.5">
+              <Loader2 className="w-3 h-3 animate-spin" />
+              Loading face detection model...
+            </p>
           ) : (
             <p className="text-xs text-muted-foreground">
-              Hold still and look at the camera
+              {isPoseStage ? 'Follow the pose instructions above' : 'Hold still and look at the camera'}
             </p>
           )}
         </div>
