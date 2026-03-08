@@ -23,19 +23,19 @@ export default function FinalPass() {
       className="flex flex-col h-full w-full relative overflow-hidden"
     >
       {/* Hero header with airplane image */}
-      <div className="relative w-full h-52 shrink-0 overflow-hidden">
+      <div className="relative w-full h-44 shrink-0 overflow-hidden">
         <motion.img
           initial={{ opacity: 0, y: -30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.7, ease: "easeOut" }}
-          src="/airplane-6.jpg"
+          src="/airplane-4.jpg"
           alt=""
           className="w-full h-full object-cover"
         />
         <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-black/20 to-background" />
 
         {/* Header text overlay */}
-        <div className="absolute inset-0 flex items-end px-6 pb-8">
+        <div className="absolute inset-0 flex items-end px-6 pb-12">
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
