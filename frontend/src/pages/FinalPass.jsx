@@ -22,37 +22,46 @@ export default function FinalPass() {
       transition={{ duration: 0.6, ease: "easeOut" }}
       className="flex flex-col h-full w-full relative overflow-hidden"
     >
-      {/* Cloud background */}
-      <div className="absolute inset-0 z-0">
-        <img src="/bg-image.jpg" alt="" className="w-full h-full object-cover opacity-25 animate-drift" />
-        <div className="absolute inset-0 bg-gradient-to-b from-white/80 via-white/90 to-white" />
+      {/* Hero header with airplane image */}
+      <div className="relative w-full h-52 shrink-0 overflow-hidden">
+        <motion.img
+          initial={{ opacity: 0, y: -30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.7, ease: "easeOut" }}
+          src="/airplane-6.jpg"
+          alt=""
+          className="w-full h-full object-cover"
+        />
+        <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-black/20 to-background" />
+
+        {/* Header text overlay */}
+        <div className="absolute inset-0 flex items-end px-6 pb-8">
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2, duration: 0.5, ease: "easeOut" }}
+            className="flex items-center gap-4"
+          >
+            <div className="w-12 h-12 shrink-0 rounded-full bg-emerald-500 flex items-center justify-center shadow-lg shadow-emerald-500/30">
+              <ScanFace className="w-6 h-6 text-white" />
+            </div>
+            <div>
+              <h1 className="font-display text-2xl font-semibold text-white drop-shadow-md">Biometric Pass</h1>
+              <p className="text-white/70 text-xs mt-0.5">Active — you're all set for your flight!</p>
+            </div>
+          </motion.div>
+        </div>
       </div>
 
-      <div className="relative z-10 flex flex-col items-center p-6 pt-10 flex-1 overflow-y-auto">
-        {/* Biometric pass active header */}
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2, duration: 0.5, ease: "easeOut" }}
-          className="flex items-center gap-4 w-full"
-        >
-          <div className="w-14 h-14 aspect-square shrink-0 rounded-full bg-emerald-500 flex items-center justify-center shadow-lg shadow-emerald-500/30">
-            <ScanFace className="w-7 h-7 text-white" />
-          </div>
-          <div>
-            <h1 className="font-display text-2xl font-semibold text-foreground">Biometric Pass</h1>
-            <p className="text-muted-foreground text-sm mt-0.5">Active — you're all set for your flight!</p>
-          </div>
-        </motion.div>
-
-        {/* Boarding Pass Ticket */}
+      {/* Boarding Pass Ticket - overlapping hero */}
+      <div className="relative z-10 -mt-5 mx-4">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.35, duration: 0.5, ease: "easeOut" }}
-          className="w-full mt-6"
+          className="w-full"
         >
-          <div className="bg-white rounded-2xl shadow-lg border border-border/50 overflow-hidden">
+          <div className="bg-white rounded-2xl shadow-md border border-border/50 overflow-hidden">
             {/* Ticket header */}
             <div className="bg-white border-b border-border/40 px-5 py-4 flex items-center justify-between">
               <div className="flex items-center gap-3">
@@ -115,13 +124,15 @@ export default function FinalPass() {
             </div>
           </div>
         </motion.div>
+      </div>
 
-        {/* At the airport instructions */}
+      {/* At the airport instructions */}
+      <div className="flex-1 overflow-y-auto px-5 pt-5 pb-6">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.6, duration: 0.5, ease: "easeOut" }}
-          className="w-full mt-6"
+          className="w-full"
         >
           <h2 className="text-sm font-semibold text-foreground mb-3">At the airport</h2>
           <div className="space-y-3">

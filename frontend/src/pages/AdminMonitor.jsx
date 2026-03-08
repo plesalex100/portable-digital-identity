@@ -50,7 +50,7 @@ export default function AdminMonitor() {
                   {event.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
                 </div>
                 <div className="flex items-center gap-2 flex-1 justify-end">
-                  <div className="w-20 h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                  <div className="w-20 h-1.5 bg-muted rounded-full overflow-hidden">
                     <div
                       className={`h-full rounded-full ${event.matchScore > 80 ? 'bg-emerald-500' : 'bg-red-500'}`}
                       style={{ width: `${event.matchScore}%` }}
