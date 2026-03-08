@@ -241,7 +241,7 @@ export default function FaceRecognition() {
           </svg>
 
           {/* Camera circle */}
-          <div className={`relative w-[280px] h-[280px] rounded-full overflow-hidden border-2 border-white bg-slate-100 z-10 flex items-center justify-center shadow-xl ${glowColor}`}>
+          <div className={`relative w-[280px] h-[280px] rounded-full overflow-hidden border-2 border-white bg-muted z-10 flex items-center justify-center shadow-xl ${glowColor}`}>
             <video
               ref={videoRef}
               autoPlay

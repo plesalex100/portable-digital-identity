@@ -82,7 +82,10 @@ export default function PassportEntry() {
     >
       {/* Hero header with airplane image */}
       <div className="relative w-full h-52 shrink-0 overflow-hidden">
-        <img
+        <motion.img
+          initial={{ opacity: 0, y: -30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.7, ease: "easeOut" }}
           src="/airplane-5.jpg"
           alt=""
           className="w-full h-full object-cover"

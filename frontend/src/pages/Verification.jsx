@@ -204,7 +204,7 @@ export default function Verification() {
           {/* Camera View */}
           <div className="space-y-1.5">
             <label className="text-sm font-medium text-foreground">Camera Feed</label>
-            <div className="relative w-full max-w-sm mx-auto aspect-square rounded-xl overflow-hidden border border-input bg-slate-100">
+            <div className="relative w-full max-w-sm mx-auto aspect-square rounded-xl overflow-hidden border border-input bg-muted">
               <video
                 ref={videoRef}
                 autoPlay
