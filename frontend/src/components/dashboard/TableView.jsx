@@ -104,7 +104,7 @@ function PassengerRow({ p }) {
 }
 
 export default function TableView({ passengers, search }) {
-  const [groupBy, setGroupBy] = useState('none'); // 'none' | 'status' | 'flight'
+  const [groupBy, setGroupBy] = useState('none'); // 'none' | 'status'
   const [collapsed, setCollapsed] = useState({});
   const [sortKey, setSortKey] = useState(null); // 'name' | 'status' | 'verificationScore'
   const [sortDir, setSortDir] = useState('asc'); // 'asc' | 'desc'
@@ -165,17 +165,12 @@ export default function TableView({ passengers, search }) {
     if (groupBy === 'none') return null;
     const map = {};
     for (const p of filtered) {
-      const key = groupBy === 'status' ? p.status : p.flightNumber;
+      const key = p.status;
       if (!map[key]) map[key] = [];
       map[key].push(p);
     }
     const entries = Object.entries(map);
-    if (groupBy === 'status') {
-      entries.sort((a, b) => STATUS_ORDER.indexOf(a[0]) - STATUS_ORDER.indexOf(b[0]));
-    } else {
-      entries.sort((a, b) => a[0].localeCompare(b[0]));
-    }
-    // Apply column sorting within each group
+    entries.sort((a, b) => STATUS_ORDER.indexOf(a[0]) - STATUS_ORDER.indexOf(b[0]));
     return entries.map(([key, items]) => [key, applySorting(items)]);
   }, [filtered, groupBy, sortKey, sortDir]);
 
@@ -184,11 +179,7 @@ export default function TableView({ passengers, search }) {
   };
 
   const groupLabel = (key) => {
-    if (groupBy === 'status') {
-      return STATUS_CONFIG[key]?.label || key;
-    }
-    const p = passengers.find((p) => p.flightNumber === key);
-    return `${key} — ${p?.airline || ''} (${p?.departure} → ${p?.arrival})`;
+    return STATUS_CONFIG[key]?.label || key;
   };
 
   const SortIcon = ({ column }) => {
@@ -229,7 +220,6 @@ export default function TableView({ passengers, search }) {
         {[
           { key: 'none', label: 'No Grouping' },
           { key: 'status', label: 'By Status' },
-          { key: 'flight', label: 'By Flight' },
         ].map(({ key, label }) => (
           <button
             key={key}
