@@ -76,15 +76,16 @@ export default function PassportEntry() {
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      exit={{ opacity: 0, x: -50 }}
+      exit={{ opacity: 0 }}
       transition={{ duration: 0.5, ease: "easeOut" }}
-      className="flex flex-col h-full w-full relative overflow-hidden"
+      className="flex flex-col h-full w-full relative"
     >
       {/* Hero header with airplane image */}
-      <div className="relative w-full h-52 shrink-0 overflow-hidden">
+      <div className="relative w-full h-44 shrink-0 overflow-hidden">
         <motion.img
           initial={{ opacity: 0, y: -30 }}
           animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -30 }}
           transition={{ duration: 0.7, ease: "easeOut" }}
           src="/airplane-5.jpg"
           alt=""
@@ -93,7 +94,7 @@ export default function PassportEntry() {
         <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-black/20 to-background" />
 
         {/* Logo + header text overlay */}
-        <div className="absolute inset-0 flex flex-col items-start justify-end px-6 pb-8">
+        <div className="absolute inset-0 flex flex-col items-start justify-end px-6 pb-12">
           <motion.img
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
