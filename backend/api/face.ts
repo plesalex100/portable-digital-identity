@@ -236,6 +236,8 @@ router.post("/verify", upload.single("image"), async (req, res) => {
                 statusLabel: STATUS_LABELS[person.status || ""] || person.status,
                 checkpoint,
                 checkpointLabel: flow.label,
+                flightNumber: person.flightNumber || null,
+                gate: person.gate || null,
             },
         });
     } catch (error) {

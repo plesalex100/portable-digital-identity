@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ShieldCheck, ShieldAlert, AlertTriangle, Loader2, ScanFace } from 'lucide-react';
+import { ShieldCheck, ShieldAlert, AlertTriangle, Loader2, ScanFace, ArrowRight, Plane } from 'lucide-react';
 import { useParams } from 'react-router-dom';
 import { verifyFace, getCheckpoints } from '../api';
 import { useFaceDetection } from '@/hooks/useFaceDetection';
@@ -8,6 +8,23 @@ import { cropFaceFromCanvas } from '@/lib/faceDetectionUtils';
 import { useWebHaptics } from 'web-haptics/react';
 
 const READY_HOLD_MS = 300; // Brief hold to avoid accidental captures
+
+const CHECKPOINTS = [
+  { id: 'security-gate', label: 'Security Gate' },
+  { id: 'immigration', label: 'Immigration Control' },
+  { id: 'duty-free', label: 'Duty-Free Shops' },
+  { id: 'lounge', label: 'Lounge Access' },
+  { id: 'gate', label: 'Boarding Gate' },
+];
+
+// What to show as "next step" after each checkpoint
+const NEXT_STEP = {
+  'security-gate': { text: 'Proceed to Immigration Control' },
+  immigration:     { text: 'Proceed to Gate', useGate: true },
+  'duty-free':     { text: 'Proceed to Gate', useGate: true },
+  lounge:          { text: 'Proceed to Gate', useGate: true },
+  gate:            { text: 'Board your flight', useFlight: true },
+};
 
 export default function Verification() {
   const { trigger: haptic } = useWebHaptics();
@@ -373,7 +390,30 @@ export default function Verification() {
                 {stage === 'verified' ? 'Identity Confirmed' : stage === 'wrong-order' ? 'Wrong Checkpoint' : stage === 'rejected' ? 'Access Denied' : 'Error'}
               </span>
               {stage === 'verified' && result && (
-                <span className="text-lg font-bold text-white mt-1">{result.name}</span>
+                <>
+                  <span className="text-lg font-bold text-white mt-1">{result.name}</span>
+                  {result.flightNumber && (
+                    <div className="flex items-center gap-1.5 mt-1">
+                      <Plane className="w-3.5 h-3.5 text-white/80" />
+                      <span className="text-xs font-semibold text-white/90">
+                        {result.flightNumber}
+                        {result.gate && <> &middot; Gate {result.gate}</>}
+                      </span>
+                    </div>
+                  )}
+                  {NEXT_STEP[checkpoint.id] && (
+                    <div className="flex items-center gap-1.5 mt-3 px-3 py-1.5 rounded-full bg-white/20">
+                      <ArrowRight className="w-3.5 h-3.5 text-white" />
+                      <span className="text-xs font-semibold text-white">
+                        {NEXT_STEP[checkpoint.id].useGate && result.gate
+                          ? `Proceed to Gate ${result.gate}`
+                          : NEXT_STEP[checkpoint.id].useFlight && result.flightNumber
+                          ? `Board ${result.flightNumber}`
+                          : NEXT_STEP[checkpoint.id].text}
+                      </span>
+                    </div>
+                  )}
+                </>
               )}
               {stage === 'wrong-order' && wrongOrderData && (
                 <span className="text-xs text-white/80">{wrongOrderData.name} — complete previous step first</span>

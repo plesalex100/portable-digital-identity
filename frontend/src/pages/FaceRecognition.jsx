@@ -3,16 +3,16 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { enrollFace } from '../api';
 import { Button } from '@/components/ui/button';
-import { ShieldCheck, Camera, Plane, Check, Loader2 } from 'lucide-react';
+import { ShieldCheck, Camera, Check, Loader2, ArrowLeft, ArrowRight, ScanFace, Crosshair, CircleDot } from 'lucide-react';
 import { getSession } from '@/lib/session';
 import { useFaceDetection } from '@/hooks/useFaceDetection';
 import { cropFaceFromCanvas } from '@/lib/faceDetectionUtils';
 import { useWebHaptics } from 'web-haptics/react';
 
 const POSES = [
-  { key: 'front', label: 'Look straight at the camera', icon: '正' },
-  { key: 'left', label: 'Turn your head left', icon: '←' },
-  { key: 'right', label: 'Turn your head right', icon: '→' },
+  { key: 'front', label: 'Look straight ahead' },
+  { key: 'left', label: 'Turn head left' },
+  { key: 'right', label: 'Turn head right' },
 ];
 
 const POSE_HOLD_MS = 300; // Brief hold to avoid accidental captures
@@ -117,6 +117,42 @@ export default function FaceRecognition() {
     }
   }, [scanStage, isModelLoaded]);
 
+  const playChime = useCallback((type = 'step') => {
+    try {
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      if (type === 'step') {
+        // Quick ding
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.frequency.value = 880;
+        osc.type = 'sine';
+        gain.gain.setValueAtTime(0.25, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.25);
+        osc.start();
+        osc.stop(ctx.currentTime + 0.25);
+        osc.onended = () => ctx.close();
+      } else {
+        // Success: ascending ding-ding-ding
+        [880, 1100, 1320].forEach((freq, i) => {
+          const g = ctx.createGain();
+          g.connect(ctx.destination);
+          const o = ctx.createOscillator();
+          o.connect(g);
+          o.frequency.value = freq;
+          o.type = 'sine';
+          const t = ctx.currentTime + i * 0.1;
+          g.gain.setValueAtTime(0.2, t);
+          g.gain.exponentialRampToValueAtTime(0.01, t + 0.25);
+          o.start(t);
+          o.stop(t + 0.25);
+          if (i === 2) o.onended = () => ctx.close();
+        });
+      }
+    } catch (e) { /* audio not available */ }
+  }, []);
+
   // Keep refs in sync with state
   useEffect(() => {
     capturedImagesRef.current = capturedImages;
@@ -170,6 +206,7 @@ export default function FaceRecognition() {
               if (cropped) blob = cropped;
             }
             haptic('nudge');
+            playChime('step');
             const newImages = [...capturedImagesRef.current, blob];
             setCapturedImages(newImages);
             capturedImagesRef.current = newImages;
@@ -189,6 +226,7 @@ export default function FaceRecognition() {
                 }
                 setScanStage('complete');
                 haptic('success');
+                playChime('success');
                 stopCamera();
                 setTimeout(() => navigate('/pass', { state: { userData } }), 1000);
               } catch (err) {
@@ -258,9 +296,9 @@ export default function FaceRecognition() {
     if (scanStage === 'error') return 'Enrollment failed';
     if (scanStage === 'duplicate') return 'Already checked in';
     if (isPoseStage) {
-      if (!faceDetected) return 'Position your face in the frame';
+      if (!faceDetected) return 'No face detected';
       if (!isCentered) return 'Move closer to center';
-      if (currentPose !== POSES[currentPoseIndex].key) return 'Follow the direction above';
+      if (currentPose !== POSES[currentPoseIndex].key) return POSES[currentPoseIndex].label;
       return 'Hold still...';
     }
     return '';
@@ -308,46 +346,39 @@ export default function FaceRecognition() {
           Biometric Scan
         </motion.h2>
 
-        {/* Status text */}
-        <div className="mt-2 h-7 flex justify-center items-center">
-          <p className={`text-base font-semibold transition-colors duration-300 ${statusColor}`}>
-            {statusText()}
-          </p>
+        {/* Status text - only show for non-pose stages */}
+        {!isPoseStage && (
+          <div className="mt-2 h-7 flex justify-center items-center">
+            <p className={`text-base font-semibold transition-colors duration-300 ${statusColor}`}>
+              {statusText()}
+            </p>
+          </div>
+        )}
+
+        {/* Pose instruction pill */}
+        <div className={`${isPoseStage ? 'mt-2' : ''} h-8`}>
+          <AnimatePresence mode="wait">
+            {isPoseStage && (
+              <motion.div
+                key={currentPoseIndex}
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -8 }}
+                transition={{ duration: 0.25 }}
+                className="flex items-center gap-2 bg-foreground/90 text-white px-4 py-1.5 rounded-full"
+              >
+                {POSES[currentPoseIndex].key === 'front' && <ScanFace className="w-4 h-4" />}
+                {POSES[currentPoseIndex].key === 'left' && <ArrowLeft className="w-4 h-4" />}
+                {POSES[currentPoseIndex].key === 'right' && <ArrowRight className="w-4 h-4" />}
+                <span className="text-sm font-semibold tracking-tight">
+                  {POSES[currentPoseIndex].label}
+                </span>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
 
-        {/* Pose instruction — large and clear */}
-        <AnimatePresence mode="wait">
-          {isPoseStage && (
-            <motion.div
-              key={currentPoseIndex}
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -8 }}
-              transition={{ duration: 0.3 }}
-              className="mt-2 flex items-center gap-3"
-            >
-              <span className="text-3xl">{POSES[currentPoseIndex].key === 'left' ? '👈' : POSES[currentPoseIndex].key === 'right' ? '👉' : ''}</span>
-              <span className="text-xl font-bold text-foreground tracking-tight">
-                {POSES[currentPoseIndex].label}
-              </span>
-              <span className="text-3xl">{POSES[currentPoseIndex].key === 'left' ? '' : POSES[currentPoseIndex].key === 'right' ? '' : ''}</span>
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        {/* Flight info mini strip */}
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ delay: 0.4 }}
-          className="flex items-center gap-3 mt-4 mb-6 bg-white/80 backdrop-blur-sm px-4 py-2 rounded-full border border-border/40 shadow-sm"
-        >
-          <span className="text-xs font-bold text-foreground">{userData.departure || 'AMS'}</span>
-          <Plane className="w-3 h-3 text-primary rotate-45" />
-          <span className="text-xs font-bold text-foreground">{userData.arrival || 'FRA'}</span>
-          <div className="w-px h-3 bg-border" />
-          <span className="text-xs text-muted-foreground">{userData.flightNumber || 'SG372'}</span>
-        </motion.div>
+        <div className="mb-6" />
 
         {/* Camera view with ring */}
         <motion.div
@@ -412,10 +443,79 @@ export default function FaceRecognition() {
               />
             )}
 
-            {/* Center pip */}
-            {scanStage !== 'complete' && scanStage !== 'error' && (
-              <div className="absolute w-2 h-2 rounded-full bg-primary/40 z-20 pointer-events-none" />
-            )}
+            {/* Directional overlay on webcam */}
+            <AnimatePresence mode="wait">
+              {isPoseStage && (
+                <motion.div
+                  key={`overlay-${currentPoseIndex}`}
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.8 }}
+                  transition={{ duration: 0.3 }}
+                  className="absolute inset-0 z-25 pointer-events-none flex items-center justify-center"
+                >
+                  {/* Pose-specific directional cue */}
+                  {POSES[currentPoseIndex].key === 'front' && !faceDetected && (
+                    <div className="flex flex-col items-center gap-2">
+                      <ScanFace className="w-16 h-16 text-white/70" strokeWidth={1.2} />
+                      <span className="text-white/80 text-xs font-medium bg-black/40 px-3 py-1 rounded-full">
+                        Position your face here
+                      </span>
+                    </div>
+                  )}
+
+                  {POSES[currentPoseIndex].key === 'front' && faceDetected && !isCentered && (
+                    <div className="flex flex-col items-center gap-2">
+                      <Crosshair className="w-10 h-10 text-white/80 animate-pulse" strokeWidth={1.5} />
+                      <span className="text-white/90 text-xs font-medium bg-black/40 px-3 py-1 rounded-full">
+                        Move to center
+                      </span>
+                    </div>
+                  )}
+
+                  {POSES[currentPoseIndex].key === 'front' && faceDetected && isCentered && currentPose === 'front' && (
+                    <div className="flex flex-col items-center">
+                      <CircleDot className="w-10 h-10 text-emerald-400/90" strokeWidth={1.5} />
+                      <span className="text-white/90 text-xs font-medium bg-black/40 px-3 py-1 rounded-full mt-2">
+                        Hold still
+                      </span>
+                    </div>
+                  )}
+
+                  {POSES[currentPoseIndex].key === 'left' && faceDetected && currentPose !== 'left' && (
+                    <motion.div
+                      animate={{ x: [-4, -12, -4] }}
+                      transition={{ duration: 1.2, repeat: Infinity, ease: "easeInOut" }}
+                      className="absolute left-6 flex items-center gap-2"
+                    >
+                      <ArrowLeft className="w-16 h-16 text-white drop-shadow-[0_0_8px_rgba(0,0,0,0.8)]" strokeWidth={2.5} />
+                    </motion.div>
+                  )}
+
+                  {POSES[currentPoseIndex].key === 'left' && faceDetected && currentPose === 'left' && isCentered && (
+                    <div className="absolute left-6 flex items-center">
+                      <Check className="w-10 h-10 text-emerald-400/90" strokeWidth={2.5} />
+                    </div>
+                  )}
+
+                  {POSES[currentPoseIndex].key === 'right' && faceDetected && currentPose !== 'right' && (
+                    <motion.div
+                      animate={{ x: [4, 12, 4] }}
+                      transition={{ duration: 1.2, repeat: Infinity, ease: "easeInOut" }}
+                      className="absolute right-6 flex items-center gap-2"
+                    >
+                      <ArrowRight className="w-16 h-16 text-white drop-shadow-[0_0_8px_rgba(0,0,0,0.8)]" strokeWidth={2.5} />
+                    </motion.div>
+                  )}
+
+                  {POSES[currentPoseIndex].key === 'right' && faceDetected && currentPose === 'right' && isCentered && (
+                    <div className="absolute right-6 flex items-center">
+                      <Check className="w-10 h-10 text-emerald-400/90" strokeWidth={2.5} />
+                    </div>
+                  )}
+                </motion.div>
+              )}
+            </AnimatePresence>
 
             {/* Corner markers */}
             <div className="absolute inset-4 pointer-events-none z-20">
@@ -452,6 +552,7 @@ export default function FaceRecognition() {
                 <span className="text-white text-sm font-bold mt-2">Verified</span>
               </motion.div>
             )}
+
           </div>
         </motion.div>
 
@@ -520,7 +621,7 @@ export default function FaceRecognition() {
             </p>
           ) : (
             <p className="text-xs text-muted-foreground">
-              {isPoseStage ? 'Follow the pose instructions above' : 'Hold still and look at the camera'}
+              {isPoseStage ? 'Follow the on-screen directions' : 'Hold still and look at the camera'}
             </p>
           )}
         </div>
