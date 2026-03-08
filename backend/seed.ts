@@ -44,16 +44,16 @@ const FLIGHTS = [
 
 const STATUSES = [
     "checked-in",
-    "security-screening",
     "security-cleared",
+    "immigration-cleared",
+    "at-duty-free",
+    "at-lounge",
     "at-gate",
-    "boarding",
     "boarded",
-    "flagged",
 ] as const;
 
 // Weighted distribution: most passengers are further along in the flow
-const STATUS_WEIGHTS = [8, 5, 15, 25, 20, 22, 5];
+const STATUS_WEIGHTS = [8, 12, 18, 10, 8, 24, 20];
 
 
 function pick<T>(arr: T[]): T {
@@ -83,10 +83,7 @@ function randomSeat(): string {
     return `${row}${col}`;
 }
 
-function randomVerificationScore(status: string): number {
-    if (status === "flagged") {
-        return parseFloat((30 + Math.random() * 35).toFixed(1));
-    }
+function randomVerificationScore(): number {
     return parseFloat((88 + Math.random() * 12).toFixed(1));
 }
 
@@ -112,7 +109,7 @@ function generatePerson(flight: typeof FLIGHTS[number]) {
         seat: randomSeat(),
         boardingTime,
         status,
-        verificationScore: randomVerificationScore(status),
+        verificationScore: randomVerificationScore(),
         metadata: { isFakeUser: true },
     };
 }
