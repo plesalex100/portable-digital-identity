@@ -20,10 +20,13 @@ interface EnrollResponse {
   data?: unknown;
 }
 
-export const enrollFace = async (userData: UserData, imageBlob: Blob): Promise<EnrollResponse> => {
+export const enrollFace = async (userData: UserData, imageBlobs: Blob | Blob[]): Promise<EnrollResponse> => {
   const formData = new FormData();
   formData.append('name', userData.fullName || userData.name || '');
-  formData.append('images', imageBlob, 'face.jpg');
+  const blobs = Array.isArray(imageBlobs) ? imageBlobs : [imageBlobs];
+  blobs.forEach((blob, i) => {
+    formData.append('images', blob, `face-${i}.jpg`);
+  });
   if (userData.passportNumber) formData.append('passportNumber', userData.passportNumber);
   if (userData.nationality) formData.append('nationality', userData.nationality);
   if (userData.flightNumber) formData.append('flightNumber', userData.flightNumber);

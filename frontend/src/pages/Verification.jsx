@@ -1,8 +1,9 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ShieldCheck, ShieldAlert, ScanFace, RotateCcw, AlertTriangle } from 'lucide-react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { ShieldCheck, ShieldAlert, RotateCcw, AlertTriangle, Loader2, ScanFace } from 'lucide-react';
+import { useParams } from 'react-router-dom';
 import { verifyFace } from '../api';
+import { useFaceDetection } from '@/hooks/useFaceDetection';
 
 const CHECKPOINTS = [
   { id: 'check-in', label: 'Check-In' },
@@ -17,15 +18,22 @@ export default function Verification() {
   const canvasRef = useRef(null);
   const streamRef = useRef(null);
   const { checkpoint: checkpointParam } = useParams();
-  const navigate = useNavigate();
 
   const checkpoint = CHECKPOINTS.find(cp => cp.id === checkpointParam) || CHECKPOINTS[0];
 
-  const [stage, setStage] = useState('ready'); // ready | scanning | verified | rejected | wrong-order | error
+  // idle | ready | scanning | verified | rejected | wrong-order | error
+  const [stage, setStage] = useState('idle');
   const [cameraReady, setCameraReady] = useState(false);
   const [result, setResult] = useState(null);
   const [errorMsg, setErrorMsg] = useState('');
   const [wrongOrderData, setWrongOrderData] = useState(null);
+
+  const detectionEnabled = cameraReady && (stage === 'idle' || stage === 'ready');
+
+  const { isModelLoaded, faceDetected, isCentered, isStable } = useFaceDetection({
+    videoRef,
+    enabled: detectionEnabled,
+  });
 
   const stopCamera = useCallback(() => {
     if (streamRef.current) {
@@ -71,59 +79,84 @@ export default function Verification() {
     return () => stopCamera();
   }, [startCamera, stopCamera]);
 
-
-  const handleScan = async () => {
-    setStage('scanning');
-    setResult(null);
-    setErrorMsg('');
-    setWrongOrderData(null);
-
-    try {
-      const blob = await capturePhoto();
-      if (!blob) throw new Error('Failed to capture photo');
-
-      const data = await verifyFace(blob, checkpoint.id);
-
-      setResult(data.data);
-      setStage('verified');
-    } catch (err) {
-      const msg = err.message || 'Verification failed';
-      if (err.code === 'WRONG_CHECKPOINT_ORDER') {
-        setStage('wrong-order');
-        setWrongOrderData(err.data);
-        setErrorMsg(msg);
-      } else if (msg.includes('No matching person') || msg.includes('UNKNOWN_FACE') || err.code === 'UNKNOWN_FACE') {
-        setStage('rejected');
-        setErrorMsg('Identity not recognized');
-      } else {
-        setStage('error');
-        setErrorMsg(msg);
-      }
+  // Transition idle -> ready when face detected
+  useEffect(() => {
+    if (stage === 'idle' && isModelLoaded && faceDetected) {
+      setStage('ready');
     }
-  };
+  }, [stage, isModelLoaded, faceDetected]);
 
-  // Auto-scan when camera is ready or after reset
+  // Transition ready -> idle if face disappears
   useEffect(() => {
-    if (stage !== 'ready' || !cameraReady) return;
-    const timer = setTimeout(() => handleScan(), 1500);
-    return () => clearTimeout(timer);
-  }, [stage, cameraReady]);
+    if (stage === 'ready' && !faceDetected) {
+      setStage('idle');
+    }
+  }, [stage, faceDetected]);
 
-  // Auto-restart after 5s when verified, rejected, or wrong-order
+  // Transition ready -> scanning when centered + stable
   useEffect(() => {
-    if (stage !== 'verified' && stage !== 'rejected' && stage !== 'wrong-order') return;
-    const timer = setTimeout(() => handleReset(), 5000);
-    return () => clearTimeout(timer);
-  }, [stage]);
+    if (stage !== 'ready') return;
+    if (!faceDetected || !isCentered || !isStable) return;
 
-  const handleReset = () => {
-    setStage('ready');
-    setResult(null);
-    setErrorMsg('');
-    if (!streamRef.current) startCamera();
+    const handleScan = async () => {
+      setStage('scanning');
+      setResult(null);
+      setErrorMsg('');
+      setWrongOrderData(null);
+
+      try {
+        const blob = await capturePhoto();
+        if (!blob) throw new Error('Failed to capture photo');
+
+        const data = await verifyFace(blob, checkpoint.id);
+        setResult(data.data);
+        setStage('verified');
+      } catch (err) {
+        const msg = err.message || 'Verification failed';
+        if (err.code === 'WRONG_CHECKPOINT_ORDER') {
+          setStage('wrong-order');
+          setWrongOrderData(err.data);
+          setErrorMsg(msg);
+        } else if (msg.includes('No matching person') || msg.includes('UNKNOWN_FACE') || err.code === 'UNKNOWN_FACE') {
+          setStage('rejected');
+          setErrorMsg('Identity not recognized');
+        } else {
+          setStage('error');
+          setErrorMsg(msg);
+        }
+      }
+    };
+
+    handleScan();
+  }, [stage, faceDetected, isCentered, isStable]);
+
+  // Auto-restart after 5s when showing result
+  useEffect(() => {
+    if (stage !== 'verified' && stage !== 'rejected' && stage !== 'wrong-order' && stage !== 'error') return;
+    const timer = setTimeout(() => {
+      setStage('idle');
+      setResult(null);
+      setErrorMsg('');
+      setWrongOrderData(null);
+      if (!streamRef.current) startCamera();
+    }, 5000);
+    return () => clearTimeout(timer);
+  }, [stage, startCamera]);
+
+  // Reticle color based on detection state
+  const reticleColor = () => {
+    if (stage === 'verified') return 'border-emerald-500/80';
+    if (stage === 'rejected' || stage === 'error') return 'border-red-500/80';
+    if (stage === 'wrong-order') return 'border-amber-500/80';
+    if (stage === 'scanning') return 'border-cyan-400/80';
+    if (!faceDetected) return 'border-gray-400/40';
+    if (!isCentered) return 'border-amber-400/60';
+    if (isCentered && isStable) return 'border-emerald-400/80';
+    return 'border-cyan-400/60';
   };
 
   const stageColor = {
+    idle: 'cyan',
     ready: 'cyan',
     scanning: 'cyan',
     verified: 'emerald',
@@ -131,6 +164,8 @@ export default function Verification() {
     'wrong-order': 'amber',
     error: 'red',
   }[stage];
+
+  const modelLoading = cameraReady && !isModelLoaded;
 
   return (
     <motion.div
@@ -160,7 +195,8 @@ export default function Verification() {
               <span className={`w-1.5 h-1.5 rounded-full ${
                 stage === 'scanning' ? 'animate-pulse' : ''
               } bg-${stageColor}-400`} />
-              {stage === 'ready' && 'Standby'}
+              {stage === 'idle' && 'Waiting'}
+              {stage === 'ready' && 'Detected'}
               {stage === 'scanning' && 'Scanning'}
               {stage === 'verified' && 'Cleared'}
               {stage === 'wrong-order' && 'Wrong Step'}
@@ -186,6 +222,30 @@ export default function Verification() {
                 className="absolute inset-0 w-full h-full object-cover scale-x-[-1]"
               />
 
+              {/* Model loading overlay */}
+              {modelLoading && (
+                <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-black/30">
+                  <Loader2 className="w-8 h-8 text-white animate-spin" />
+                  <span className="text-white text-xs font-medium mt-2">Initializing...</span>
+                </div>
+              )}
+
+              {/* Idle attract overlay */}
+              {stage === 'idle' && isModelLoaded && !faceDetected && (
+                <div className="absolute inset-0 z-10 flex flex-col items-center justify-center">
+                  <motion.div
+                    animate={{ scale: [1, 1.05, 1] }}
+                    transition={{ duration: 2, repeat: Infinity }}
+                    className="flex flex-col items-center"
+                  >
+                    <ScanFace className="w-12 h-12 text-white/70" strokeWidth={1.5} />
+                    <span className="text-white/80 text-sm font-medium mt-2 text-center px-4">
+                      Step up to verify your identity
+                    </span>
+                  </motion.div>
+                </div>
+              )}
+
               {/* Scan overlay */}
               {stage === 'scanning' && (
                 <motion.div
@@ -197,10 +257,14 @@ export default function Verification() {
 
               {/* Corner reticles */}
               <div className="absolute inset-3 pointer-events-none z-10">
-                <div className={`absolute top-0 left-0 w-6 h-6 border-t-2 border-l-2 rounded-tl border-${stageColor}-500/60`} />
-                <div className={`absolute top-0 right-0 w-6 h-6 border-t-2 border-r-2 rounded-tr border-${stageColor}-500/60`} />
-                <div className={`absolute bottom-0 left-0 w-6 h-6 border-b-2 border-l-2 rounded-bl border-${stageColor}-500/60`} />
-                <div className={`absolute bottom-0 right-0 w-6 h-6 border-b-2 border-r-2 rounded-br border-${stageColor}-500/60`} />
+                {[
+                  'top-0 left-0 border-t-2 border-l-2 rounded-tl',
+                  'top-0 right-0 border-t-2 border-r-2 rounded-tr',
+                  'bottom-0 left-0 border-b-2 border-l-2 rounded-bl',
+                  'bottom-0 right-0 border-b-2 border-r-2 rounded-br',
+                ].map((pos, i) => (
+                  <div key={i} className={`absolute w-6 h-6 ${pos} ${reticleColor()} transition-colors duration-300`} />
+                ))}
               </div>
 
               {/* Result overlay */}
@@ -318,7 +382,11 @@ export default function Verification() {
 
           {/* Status Text */}
           <div className="text-center text-sm text-muted-foreground pb-4 sm:pb-0">
-            {stage === 'ready' && 'Preparing scan...'}
+            {stage === 'idle' && !isModelLoaded && 'Initializing...'}
+            {stage === 'idle' && isModelLoaded && !faceDetected && 'Waiting for passenger...'}
+            {stage === 'ready' && !isCentered && 'Center your face in the frame'}
+            {stage === 'ready' && isCentered && !isStable && 'Hold still...'}
+            {stage === 'ready' && isCentered && isStable && 'Capturing...'}
             {stage === 'scanning' && (
               <span className="flex items-center justify-center gap-2 text-primary font-medium">
                 <motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}>
@@ -328,9 +396,9 @@ export default function Verification() {
               </span>
             )}
             {stage === 'verified' && 'Verified — next passenger in a moment...'}
-            {stage === 'wrong-order' && 'Wrong checkpoint — retrying shortly...'}
-            {stage === 'rejected' && 'Not recognized — retrying shortly...'}
-            {stage === 'error' && 'Something went wrong — retrying...'}
+            {stage === 'wrong-order' && 'Wrong checkpoint — resetting shortly...'}
+            {stage === 'rejected' && 'Not recognized — resetting shortly...'}
+            {stage === 'error' && 'Something went wrong — resetting...'}
           </div>
         </div>
       </div>
