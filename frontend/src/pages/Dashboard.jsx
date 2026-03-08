@@ -79,7 +79,7 @@ export default function Dashboard() {
   const { data: passengers = [], isLoading, error, refetch } = useQuery({
     queryKey: ['passengers'],
     queryFn: fetchPassengers,
-    refetchInterval: 10000,
+    refetchInterval: 2000,
   });
 
   const { data: systemOnline = false } = useQuery({
@@ -183,7 +183,7 @@ export default function Dashboard() {
           <h1 className="text-2xl font-bold text-foreground">Passenger Dashboard</h1>
           <p className="text-slate-700 text-xs font-medium flex items-center gap-2 mt-1">
             <span className={`w-2 h-2 rounded-full ${simulating ? 'bg-amber-500' : 'bg-slate-700'} animate-pulse`} />
-            {simulating ? 'Simulation Mode' : 'Live — Auto-refresh 10s'}
+            {simulating ? 'Simulation Mode' : 'Live — Auto-refresh 2s'}
           </p>
         </div>
         <div className="flex items-center gap-2">
