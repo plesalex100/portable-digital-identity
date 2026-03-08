@@ -62,10 +62,23 @@ export async function detectSingleFace(imageBuffer: Buffer): Promise<void> {
     }
 
     if (faces.length > 1) {
-        throw new FaceServiceError(
-            "MULTIPLE_FACES_DETECTED",
-            `Expected 1 face, detected ${faces.length}. Please provide an image with a single face.`,
-        );
+        // AWS Rekognition CompareFaces uses the largest face by default.
+        // We will identify the most prominent one here for logging purposes
+        // instead of throwing an error.
+        let prominentFace = faces[0];
+        let maxArea = 0;
+
+        for (const face of faces) {
+            const width = face.BoundingBox?.Width ?? 0;
+            const height = face.BoundingBox?.Height ?? 0;
+            const area = width * height;
+            if (area > maxArea) {
+                maxArea = area;
+                prominentFace = face;
+            }
+        }
+
+        console.log(`[faceService] detectSingleFace: Multiple faces detected (${faces.length}). Proceeding with the most prominent face (confidence: ${prominentFace.Confidence?.toFixed(2)}%).`);
     }
 }
 
