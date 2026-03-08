@@ -1,0 +1,34 @@
+meta {
+  name: Get Checkpoints
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/api/checkpoints
+  body: none
+  auth: none
+}
+
+docs {
+  Get a list of all checkpoints from the MongoDB database.
+
+  **Response 200**
+  ```json
+  {
+      "success": true,
+      "data": [
+          {
+              "_id": "64abcdef1234567890abcdef",
+              "id": "security-gate",
+              "label": "Security Gate",
+              "requiredStatuses": [
+                  "checked-in"
+              ],
+              "nextStatus": "passed-security-gate"
+          },
+          ...
+      ]
+  }
+  ```
+}

@@ -54,7 +54,16 @@ export const checkPassenger = async (passportNumber: string) => {
   return response.json();
 };
 
-export const verifyFace = async (imageBlob, checkpoint = 'security-gate') => {
+export const getCheckpoints = async () => {
+  const response = await fetch(`${API_BASE}/api/checkpoints`);
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.message || 'Failed to fetch checkpoints');
+  }
+  return data.data;
+};
+
+export const verifyFace = async (imageBlob: Blob, checkpoint = 'security-gate') => {
   const formData = new FormData();
   formData.append('image', imageBlob, 'face.jpg');
   formData.append('checkpoint', checkpoint);

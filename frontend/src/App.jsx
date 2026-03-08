@@ -20,7 +20,7 @@ function AnimatedRoutes() {
         <Route path="/checked-in" element={<CheckedIn />} />
         <Route path="/face-scan" element={<FaceRecognition />} />
         <Route path="/pass" element={<FinalPass />} />
-        <Route path="/verify" element={<Navigate to="/verify/check-in" replace />} />
+        <Route path="/verify" element={<Navigate to="/verify/security-gate" replace />} />
         <Route path="/verify/:checkpoint" element={<Verification />} />
         <Route path="/dashboard" element={<Dashboard />} />
       </Routes>

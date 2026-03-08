@@ -9,6 +9,7 @@ import {
 } from "../services/faceService.js";
 import ensureDatabaseConnected from "../db/init.js";
 import Person, { PersonStatus } from "../models/Person.js";
+import Checkpoint from "../models/Checkpoint.js";
 
 const router = Router();
 
@@ -135,14 +136,8 @@ router.post("/enroll", upload.array("images"), async (req, res) => {
 //   - image: File (single, required)
 // ──────────────────────────────────────────────
 
-// Checkpoint flow: each checkpoint requires a minimum status and advances to a new status
-const CHECKPOINT_FLOW: Record<string, { requiredStatuses: string[]; nextStatus: PersonStatus; label: string }> = {
-    "security-gate": { requiredStatuses: ["checked-in"],                                              nextStatus: PersonStatus.PASSED_SECURITY_GATE, label: "Security Gate" },
-    immigration:     { requiredStatuses: ["passed-security-gate"],                                    nextStatus: PersonStatus.PASSED_IMMIGRATION,   label: "Immigration Control" },
-    "duty-free":     { requiredStatuses: ["passed-immigration", "at-lounge"],                         nextStatus: PersonStatus.AT_DUTY_FREE,         label: "Duty-Free Shops" },
-    lounge:          { requiredStatuses: ["passed-immigration", "at-duty-free"],                      nextStatus: PersonStatus.AT_LOUNGE,            label: "Lounge Access" },
-    gate:            { requiredStatuses: ["passed-immigration", "at-duty-free", "at-lounge"],         nextStatus: PersonStatus.PASSED_GATE,          label: "Boarding Gate" },
-};
+// Checkpoint flow config has been moved to MongoDB
+
 
 const STATUS_LABELS: Record<string, string> = {
     "checked-in":            "Checked In",
@@ -164,7 +159,8 @@ router.post("/verify", upload.single("image"), async (req, res) => {
             return;
         }
 
-        const flow = CHECKPOINT_FLOW[checkpoint];
+        await ensureDatabaseConnected();
+        const flow = await Checkpoint.findOne({ id: checkpoint });
         if (!flow) {
             res.status(400).json({ success: false, message: `Unknown checkpoint: ${checkpoint}` });
             return;
@@ -188,7 +184,6 @@ router.post("/verify", upload.single("image"), async (req, res) => {
         }
 
         // ── Database: look up local user ──
-        await ensureDatabaseConnected();
         const person = await Person.findById(match.personId);
 
         if (!person) {
@@ -222,7 +217,7 @@ router.post("/verify", upload.single("image"), async (req, res) => {
 
         // ── Update status if checkpoint advances it ──
         if (flow.nextStatus) {
-            person.status = flow.nextStatus;
+            person.status = flow.nextStatus as unknown as PersonStatus;
             person.verificationScore = match.confidence;
             await person.save();
         }

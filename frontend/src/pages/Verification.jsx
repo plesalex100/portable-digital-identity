@@ -2,20 +2,12 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ShieldCheck, ShieldAlert, AlertTriangle, Loader2, ScanFace } from 'lucide-react';
 import { useParams } from 'react-router-dom';
-import { verifyFace } from '../api';
+import { verifyFace, getCheckpoints } from '../api';
 import { useFaceDetection } from '@/hooks/useFaceDetection';
 import { cropFaceFromCanvas } from '@/lib/faceDetectionUtils';
 import { useWebHaptics } from 'web-haptics/react';
 
 const READY_HOLD_MS = 300; // Brief hold to avoid accidental captures
-
-const CHECKPOINTS = [
-  { id: 'security-gate', label: 'Security Gate' },
-  { id: 'immigration', label: 'Immigration Control' },
-  { id: 'duty-free', label: 'Duty-Free Shops' },
-  { id: 'lounge', label: 'Lounge Access' },
-  { id: 'gate', label: 'Boarding Gate' },
-];
 
 export default function Verification() {
   const { trigger: haptic } = useWebHaptics();
@@ -24,7 +16,18 @@ export default function Verification() {
   const streamRef = useRef(null);
   const { checkpoint: checkpointParam } = useParams();
 
-  const checkpoint = CHECKPOINTS.find(cp => cp.id === checkpointParam) || CHECKPOINTS[0];
+  const [checkpoints, setCheckpoints] = useState([]);
+  const [loadingCheckpoints, setLoadingCheckpoints] = useState(true);
+
+  useEffect(() => {
+    getCheckpoints()
+      .then(cps => setCheckpoints(cps))
+      .catch(console.error)
+      .finally(() => setLoadingCheckpoints(false));
+  }, []);
+
+  const checkpoint = checkpoints.find(cp => cp.id === checkpointParam) || 
+    (checkpoints.length > 0 ? checkpoints[0] : { id: checkpointParam || 'security-gate', label: 'Loading...' });
 
   // idle | ready | scanning | verified | rejected | wrong-order | error
   const [stage, setStage] = useState('idle');
