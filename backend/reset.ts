@@ -60,7 +60,7 @@ async function emptyS3Bucket() {
 
 // ─── DB cleanup ──────────────────────────────────────────────────────────────
 
-async function cleanDatabase() {
+async function cleanPersons() {
     const { MONGO_URL, DATABASE_NAME } = process.env;
 
     if (!MONGO_URL || !DATABASE_NAME) {
@@ -71,17 +71,8 @@ async function cleanDatabase() {
     await mongoose.connect(MONGO_URL, { dbName: DATABASE_NAME });
     console.log(`Connected to ${DATABASE_NAME}`);
 
-    const db = mongoose.connection.db!;
-    const collections = await db.listCollections().toArray();
-
-    for (const col of collections) {
-        await db.dropCollection(col.name);
-        console.log(`DB: dropped collection "${col.name}"`);
-    }
-
-    if (collections.length === 0) {
-        console.log("DB: no collections to drop");
-    }
+    const result = await Person.deleteMany({});
+    console.log(`DB: deleted ${result.deletedCount} persons`);
 }
 
 // ─── Seed (reuses existing seed logic inline) ────────────────────────────────
@@ -120,10 +111,7 @@ const NATIONALITIES = [
 ];
 
 const FLIGHTS = [
-    { flightNumber: "EK204", airline: "Emirates",       departure: "AMS", arrival: "DXB", gate: "B3", boardingHoursFromNow: 0.5 },
-    { flightNumber: "LH372", airline: "Lufthansa",      departure: "AMS", arrival: "FRA", gate: "A7", boardingHoursFromNow: 1.5 },
-    { flightNumber: "BA438", airline: "British Airways", departure: "AMS", arrival: "LHR", gate: "C5", boardingHoursFromNow: 2.5 },
-    { flightNumber: "DL147", airline: "Delta",           departure: "AMS", arrival: "JFK", gate: "D6", boardingHoursFromNow: 4.0 },
+    { flightNumber: "W6 3153", airline: "Wizz Air", departure: "OMR", arrival: "LTN", gate: "A2", boardingHoursFromNow: 1.5 },
 ];
 
 const STATUSES = [
@@ -242,22 +230,18 @@ async function seedCheckpoints() {
 // ─── Main ────────────────────────────────────────────────────────────────────
 
 async function main() {
-    console.log("=== FULL RESET ===\n");
+    console.log("=== RESET PERSONS ===\n");
 
     // 1. Empty S3 bucket
     console.log("--- Step 1: Emptying S3 bucket ---");
     await emptyS3Bucket();
 
-    // 2. Drop all DB collections
-    console.log("\n--- Step 2: Cleaning database ---");
-    await cleanDatabase();
+    // 2. Delete all persons
+    console.log("\n--- Step 2: Clearing persons ---");
+    await cleanPersons();
 
-    // 3. Insert checkpoints
-    console.log("\n--- Step 3: Inserting checkpoints ---");
-    await seedCheckpoints();
-
-    // 4. Re-seed passengers
-    console.log("\n--- Step 4: Seeding fresh data ---");
+    // 3. Re-seed passengers
+    console.log("\n--- Step 3: Seeding fresh data ---");
     await seedDatabase();
 
     await mongoose.disconnect();

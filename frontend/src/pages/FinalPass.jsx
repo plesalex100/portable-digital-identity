@@ -67,12 +67,12 @@ export default function FinalPass() {
               <div className="flex items-center gap-3">
                 <img src="/logo.svg" alt="SkyGate" className="w-8 h-8" />
                 <div>
-                  <div className="text-foreground text-xs font-bold tracking-wider uppercase">SkyGate Airways</div>
+                  <div className="text-foreground text-xs font-bold tracking-wider uppercase">Wizz Air</div>
                   <div className="text-muted-foreground text-[10px]">Boarding Pass</div>
                 </div>
               </div>
               <div className="text-right">
-                <div className="text-foreground text-xs font-bold">{userData.flightNumber || 'SG372'}</div>
+                <div className="text-foreground text-xs font-bold">{userData.flightNumber || 'W6 3153'}</div>
                 <div className="text-muted-foreground text-[10px]">Economy</div>
               </div>
             </div>
@@ -80,8 +80,8 @@ export default function FinalPass() {
             {/* Route display */}
             <div className="px-5 py-5 flex items-center justify-between">
               <div className="text-center">
-                <div className="text-2xl font-bold text-foreground tracking-wide">{userData.departure || 'AMS'}</div>
-                <div className="text-[10px] text-muted-foreground mt-0.5">Amsterdam</div>
+                <div className="text-2xl font-bold text-foreground tracking-wide">{userData.departure || 'OMR'}</div>
+                <div className="text-[10px] text-muted-foreground mt-0.5">Oradea</div>
               </div>
               <div className="flex-1 flex items-center justify-center px-4">
                 <div className="h-px flex-1 bg-border" />
@@ -91,8 +91,8 @@ export default function FinalPass() {
                 <div className="h-px flex-1 bg-border" />
               </div>
               <div className="text-center">
-                <div className="text-2xl font-bold text-foreground tracking-wide">{userData.arrival || 'FRA'}</div>
-                <div className="text-[10px] text-muted-foreground mt-0.5">Frankfurt</div>
+                <div className="text-2xl font-bold text-foreground tracking-wide">{userData.arrival || 'LTN'}</div>
+                <div className="text-[10px] text-muted-foreground mt-0.5">London</div>
               </div>
             </div>
 
@@ -111,7 +111,7 @@ export default function FinalPass() {
               </div>
               <div>
                 <div className="text-[10px] text-muted-foreground uppercase tracking-wider">Gate</div>
-                <div className="text-sm font-bold text-foreground mt-0.5">{userData.gate || 'A7'}</div>
+                <div className="text-sm font-bold text-foreground mt-0.5">{userData.gate || 'A2'}</div>
               </div>
               <div>
                 <div className="text-[10px] text-muted-foreground uppercase tracking-wider">Passport</div>
@@ -151,7 +151,7 @@ export default function FinalPass() {
               </div>
               <div>
                 <p className="text-sm font-medium text-foreground">Board your flight</p>
-                <p className="text-xs text-muted-foreground">Head to Gate {userData.gate || 'A7'} — scan your face at the gate to board.</p>
+                <p className="text-xs text-muted-foreground">Head to Gate {userData.gate || 'A2'} — scan your face at the gate to board.</p>
               </div>
             </div>
           </div>

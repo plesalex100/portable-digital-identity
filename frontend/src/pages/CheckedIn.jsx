@@ -53,7 +53,7 @@ export default function CheckedIn() {
             </div>
             <div>
               <h1 className="font-display text-2xl font-semibold text-white drop-shadow-md">You're checked in!</h1>
-              <p className="text-white/70 text-xs mt-0.5">Flight {userData.flightNumber || 'SG372'}</p>
+              <p className="text-white/70 text-xs mt-0.5">Flight {userData.flightNumber || 'W6 3153'}</p>
             </div>
           </motion.div>
         </div>
@@ -73,12 +73,12 @@ export default function CheckedIn() {
               <div className="flex items-center gap-3">
                 <img src="/logo.svg" alt="SkyGate" className="w-8 h-8" />
                 <div>
-                  <div className="text-foreground text-xs font-bold tracking-wider uppercase">SkyGate Airways</div>
+                  <div className="text-foreground text-xs font-bold tracking-wider uppercase">Wizz Air</div>
                   <div className="text-muted-foreground text-[10px]">Boarding Pass</div>
                 </div>
               </div>
               <div className="text-right">
-                <div className="text-foreground text-xs font-bold">{userData.flightNumber || 'SG372'}</div>
+                <div className="text-foreground text-xs font-bold">{userData.flightNumber || 'W6 3153'}</div>
                 <div className="text-muted-foreground text-[10px]">Economy</div>
               </div>
             </div>
@@ -86,8 +86,8 @@ export default function CheckedIn() {
             {/* Route display */}
             <div className="px-5 py-5 flex items-center justify-between">
               <div className="text-center">
-                <div className="text-2xl font-bold text-foreground tracking-wide">{userData.departure || 'AMS'}</div>
-                <div className="text-[10px] text-muted-foreground mt-0.5">Amsterdam</div>
+                <div className="text-2xl font-bold text-foreground tracking-wide">{userData.departure || 'OMR'}</div>
+                <div className="text-[10px] text-muted-foreground mt-0.5">Oradea</div>
               </div>
               <div className="flex-1 flex items-center justify-center px-4">
                 <div className="h-px flex-1 bg-border" />
@@ -97,8 +97,8 @@ export default function CheckedIn() {
                 <div className="h-px flex-1 bg-border" />
               </div>
               <div className="text-center">
-                <div className="text-2xl font-bold text-foreground tracking-wide">{userData.arrival || 'FRA'}</div>
-                <div className="text-[10px] text-muted-foreground mt-0.5">Frankfurt</div>
+                <div className="text-2xl font-bold text-foreground tracking-wide">{userData.arrival || 'LTN'}</div>
+                <div className="text-[10px] text-muted-foreground mt-0.5">London</div>
               </div>
             </div>
 
@@ -117,7 +117,7 @@ export default function CheckedIn() {
               </div>
               <div>
                 <div className="text-[10px] text-muted-foreground uppercase tracking-wider">Gate</div>
-                <div className="text-sm font-bold text-foreground mt-0.5">{userData.gate || 'A7'}</div>
+                <div className="text-sm font-bold text-foreground mt-0.5">{userData.gate || 'A2'}</div>
               </div>
               <div>
                 <div className="text-[10px] text-muted-foreground uppercase tracking-wider">Passport</div>

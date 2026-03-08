@@ -35,12 +35,9 @@ const NATIONALITIES = [
     "Portugal", "Switzerland",
 ];
 
-// Fixed set of flights — all 100 passengers are spread across these 4 flights
+// Single demo flight: Oradea → London
 const FLIGHTS = [
-    { flightNumber: "EK204", airline: "Emirates",         departure: "AMS", arrival: "DXB", gate: "B3",  boardingHoursFromNow: 0.5 },
-    { flightNumber: "LH372", airline: "Lufthansa",        departure: "AMS", arrival: "FRA", gate: "A7",  boardingHoursFromNow: 1.5 },
-    { flightNumber: "BA438", airline: "British Airways",   departure: "AMS", arrival: "LHR", gate: "C5",  boardingHoursFromNow: 2.5 },
-    { flightNumber: "DL147", airline: "Delta",             departure: "AMS", arrival: "JFK", gate: "D6",  boardingHoursFromNow: 4.0 },
+    { flightNumber: "W6 3153", airline: "Wizz Air", departure: "OMR", arrival: "LTN", gate: "A2", boardingHoursFromNow: 1.5 },
 ];
 
 const STATUSES = [

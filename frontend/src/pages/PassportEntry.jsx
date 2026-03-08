@@ -16,11 +16,11 @@ const generatePassportNumber = () => {
 };
 
 const SHARED_FLIGHT = {
-  flightNumber: 'SG372',
-  airline: 'SkyGate Airways',
-  departure: 'AMS',
-  arrival: 'FRA',
-  gate: 'A7',
+  flightNumber: 'W6 3153',
+  airline: 'Wizz Air',
+  departure: 'OMR',
+  arrival: 'LTN',
+  gate: 'A2',
 };
 
 export default function PassportEntry() {
@@ -132,7 +132,7 @@ export default function PassportEntry() {
         >
           <div className="text-center">
             <div className="text-lg font-bold text-foreground">{SHARED_FLIGHT.departure}</div>
-            <div className="text-[10px] text-muted-foreground">Amsterdam</div>
+            <div className="text-[10px] text-muted-foreground">Oradea</div>
           </div>
           <div className="flex-1 flex items-center justify-center px-3">
             <div className="h-px flex-1 border-t border-dashed border-border" />
@@ -143,7 +143,7 @@ export default function PassportEntry() {
           </div>
           <div className="text-center">
             <div className="text-lg font-bold text-foreground">{SHARED_FLIGHT.arrival}</div>
-            <div className="text-[10px] text-muted-foreground">Frankfurt</div>
+            <div className="text-[10px] text-muted-foreground">London</div>
           </div>
           <div className="ml-4 pl-4 border-l border-border">
             <div className="text-[10px] text-muted-foreground">Flight</div>
