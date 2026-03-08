@@ -173,8 +173,8 @@ export default function Dashboard() {
     const total = activePassengers.length;
     const cleared = activePassengers.filter((p) => ['passed-check-in', 'passed-immigration', 'at-duty-free', 'at-lounge', 'passed-gate'].includes(p.status)).length;
     const atGate = activePassengers.filter((p) => ['passed-gate'].includes(p.status)).length;
-    const flights = new Set(activePassengers.map((p) => p.flightNumber)).size;
-    return { total, cleared, atGate, flights };
+    const flightCount = new Set(activePassengers.map((p) => p.flightNumber)).size;
+    return { total, cleared, atGate, flights: flightCount };
   }, [activePassengers]);
 
   return (
