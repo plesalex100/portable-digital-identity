@@ -4,6 +4,7 @@ import { ShieldCheck, ShieldAlert, RotateCcw, AlertTriangle, Loader2, ScanFace }
 import { useParams } from 'react-router-dom';
 import { verifyFace } from '../api';
 import { useFaceDetection } from '@/hooks/useFaceDetection';
+import { useWebHaptics } from 'web-haptics/react';
 
 const CHECKPOINTS = [
   { id: 'check-in', label: 'Check-In' },
@@ -14,6 +15,7 @@ const CHECKPOINTS = [
 ];
 
 export default function Verification() {
+  const { trigger: haptic } = useWebHaptics();
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
   const streamRef = useRef(null);
@@ -111,18 +113,22 @@ export default function Verification() {
         const data = await verifyFace(blob, checkpoint.id);
         setResult(data.data);
         setStage('verified');
+        haptic('success');
       } catch (err) {
         const msg = err.message || 'Verification failed';
         if (err.code === 'WRONG_CHECKPOINT_ORDER') {
           setStage('wrong-order');
           setWrongOrderData(err.data);
           setErrorMsg(msg);
+          haptic('error');
         } else if (msg.includes('No matching person') || msg.includes('UNKNOWN_FACE') || err.code === 'UNKNOWN_FACE') {
           setStage('rejected');
           setErrorMsg('Identity not recognized');
+          haptic('error');
         } else {
           setStage('error');
           setErrorMsg(msg);
+          haptic('error');
         }
       }
     };

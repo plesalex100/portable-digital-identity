@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { ShieldCheck, Camera, Plane, Check, Loader2 } from 'lucide-react';
 import { getSession } from '@/lib/session';
 import { useFaceDetection } from '@/hooks/useFaceDetection';
+import { useWebHaptics } from 'web-haptics/react';
 
 const POSES = [
   { key: 'front', label: 'Look straight at the camera', icon: '正' },
@@ -26,6 +27,7 @@ export default function FaceRecognition() {
 
   if (!userData) return null;
 
+  const { trigger: haptic } = useWebHaptics();
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
   const streamRef = useRef(null);
@@ -153,6 +155,7 @@ export default function FaceRecognition() {
           // Capture
           const blob = await capturePhoto();
           if (blob) {
+            haptic('nudge');
             const newImages = [...capturedImagesRef.current, blob];
             setCapturedImages(newImages);
             capturedImagesRef.current = newImages;
@@ -165,23 +168,27 @@ export default function FaceRecognition() {
                 if (response.code === 'ALREADY_CHECKED_IN') {
                   setErrorMsg(response.message || 'This passenger is already checked in');
                   setScanStage('duplicate');
+                  haptic('nudge');
                   stopCamera();
                   setTimeout(() => navigate('/pass', { state: { userData } }), 2000);
                   return;
                 }
                 setScanStage('complete');
+                haptic('success');
                 stopCamera();
                 setTimeout(() => navigate('/pass', { state: { userData } }), 1000);
               } catch (err) {
                 if (err.code === 'ALREADY_CHECKED_IN') {
                   setErrorMsg(err.message || 'This passenger is already checked in');
                   setScanStage('duplicate');
+                  haptic('nudge');
                   stopCamera();
                   setTimeout(() => navigate('/pass', { state: { userData } }), 2000);
                   return;
                 }
                 setErrorMsg(err.message || 'Enrollment failed');
                 setScanStage('error');
+                haptic('error');
                 stopCamera();
               }
             } else {
