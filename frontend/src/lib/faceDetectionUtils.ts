@@ -90,3 +90,78 @@ export function isFaceCentered(
 
   return inCenterX && inCenterY && goodSize;
 }
+
+/**
+ * Crop face from a canvas using landmarks. Returns a Blob of the cropped face
+ * with generous padding (forehead to below chin, ear to ear + margin).
+ */
+export function cropFaceFromCanvas(
+  canvas: HTMLCanvasElement,
+  landmarks: NormalizedLandmark[],
+  padding = 0.5
+): Promise<Blob | null> {
+  const w = canvas.width;
+  const h = canvas.height;
+
+  // Find bounding box from all landmarks
+  let minX = 1, maxX = 0, minY = 1, maxY = 0;
+  for (const lm of landmarks) {
+    if (lm.x < minX) minX = lm.x;
+    if (lm.x > maxX) maxX = lm.x;
+    if (lm.y < minY) minY = lm.y;
+    if (lm.y > maxY) maxY = lm.y;
+  }
+
+  // Add padding
+  const faceW = maxX - minX;
+  const faceH = maxY - minY;
+  const padX = faceW * padding;
+  const padY = faceH * padding;
+
+  const cropX = Math.max(0, Math.floor((minX - padX) * w));
+  const cropY = Math.max(0, Math.floor((minY - padY) * h));
+  const cropW = Math.min(w - cropX, Math.ceil((maxX - minX + padX * 2) * w));
+  const cropH = Math.min(h - cropY, Math.ceil((maxY - minY + padY * 2) * h));
+
+  const cropCanvas = document.createElement('canvas');
+  cropCanvas.width = cropW;
+  cropCanvas.height = cropH;
+  const ctx = cropCanvas.getContext('2d');
+  if (!ctx) return Promise.resolve(null);
+
+  ctx.drawImage(canvas, cropX, cropY, cropW, cropH, 0, 0, cropW, cropH);
+
+  return compressToJpeg(cropCanvas);
+}
+
+const MAX_IMAGE_SIZE = 480;
+const JPEG_QUALITY = 0.75;
+
+/**
+ * Resize a canvas to max MAX_IMAGE_SIZE on longest side and encode as jpeg.
+ */
+export function compressToJpeg(
+  source: HTMLCanvasElement,
+  maxSize = MAX_IMAGE_SIZE,
+  quality = JPEG_QUALITY
+): Promise<Blob | null> {
+  let { width, height } = source;
+
+  if (width > maxSize || height > maxSize) {
+    const scale = maxSize / Math.max(width, height);
+    width = Math.round(width * scale);
+    height = Math.round(height * scale);
+  }
+
+  const out = document.createElement('canvas');
+  out.width = width;
+  out.height = height;
+  const ctx = out.getContext('2d');
+  if (!ctx) return Promise.resolve(null);
+
+  ctx.drawImage(source, 0, 0, width, height);
+
+  return new Promise((resolve) => {
+    out.toBlob((blob) => resolve(blob), 'image/jpeg', quality);
+  });
+}

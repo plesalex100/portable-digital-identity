@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { ShieldCheck, Camera, Plane, Check, Loader2 } from 'lucide-react';
 import { getSession } from '@/lib/session';
 import { useFaceDetection } from '@/hooks/useFaceDetection';
+import { cropFaceFromCanvas } from '@/lib/faceDetectionUtils';
 import { useWebHaptics } from 'web-haptics/react';
 
 const POSES = [
@@ -14,7 +15,7 @@ const POSES = [
   { key: 'right', label: 'Turn your head right', icon: '→' },
 ];
 
-const POSE_HOLD_MS = 1000; // Hold correct pose for 1s to capture
+const POSE_HOLD_MS = 300; // Brief hold to avoid accidental captures
 
 export default function FaceRecognition() {
   const navigate = useNavigate();
@@ -41,14 +42,16 @@ export default function FaceRecognition() {
   const [poseHoldProgress, setPoseHoldProgress] = useState(0);
   const [errorMsg, setErrorMsg] = useState('');
   const [cameraReady, setCameraReady] = useState(false);
+  const [snapshotUrl, setSnapshotUrl] = useState(null);
 
   const isPoseStage = scanStage.startsWith('pose-');
   const detectionEnabled = cameraReady && (isPoseStage || scanStage === 'loading-model');
 
-  const { isModelLoaded, faceDetected, currentPose, isCentered } = useFaceDetection({
+  const { isModelLoaded, faceDetected, currentPose, isCentered, faceLandmarks } = useFaceDetection({
     videoRef,
     enabled: detectionEnabled,
   });
+  const faceLandmarksRef = useRef(null);
 
   const stopCamera = useCallback(() => {
     if (streamRef.current) {
@@ -68,7 +71,7 @@ export default function FaceRecognition() {
     ctx.drawImage(video, 0, 0);
 
     return new Promise((resolve) => {
-      canvas.toBlob((blob) => resolve(blob), 'image/jpeg', 0.9);
+      canvas.toBlob((blob) => resolve(blob), 'image/jpeg', 0.75);
     });
   }, []);
 
@@ -114,10 +117,13 @@ export default function FaceRecognition() {
     }
   }, [scanStage, isModelLoaded]);
 
-  // Keep ref in sync with state
+  // Keep refs in sync with state
   useEffect(() => {
     capturedImagesRef.current = capturedImages;
   }, [capturedImages]);
+  useEffect(() => {
+    faceLandmarksRef.current = faceLandmarks;
+  }, [faceLandmarks]);
 
   // Clear timer when pose stage changes
   useEffect(() => {
@@ -152,9 +158,17 @@ export default function FaceRecognition() {
           setPoseHoldProgress(1);
           poseTimerRef.current = null;
 
-          // Capture
-          const blob = await capturePhoto();
-          if (blob) {
+          // Capture and crop to face
+          const fullBlob = await capturePhoto();
+          if (fullBlob) {
+            // Freeze the snapshot for display
+            setSnapshotUrl(canvasRef.current.toDataURL('image/jpeg', 0.75));
+            let blob = fullBlob;
+            const landmarks = faceLandmarksRef.current;
+            if (landmarks && canvasRef.current) {
+              const cropped = await cropFaceFromCanvas(canvasRef.current, landmarks);
+              if (cropped) blob = cropped;
+            }
             haptic('nudge');
             const newImages = [...capturedImagesRef.current, blob];
             setCapturedImages(newImages);
@@ -192,7 +206,8 @@ export default function FaceRecognition() {
                 stopCamera();
               }
             } else {
-              // Move to next pose
+              // Move to next pose — clear snapshot so live feed returns
+              setSnapshotUrl(null);
               const nextIndex = currentPoseIndex + 1;
               setCurrentPoseIndex(nextIndex);
               setScanStage(`pose-${POSES[nextIndex].key}`);
@@ -244,8 +259,8 @@ export default function FaceRecognition() {
     if (scanStage === 'duplicate') return 'Already checked in';
     if (isPoseStage) {
       if (!faceDetected) return 'Position your face in the frame';
-      if (!isCentered) return 'Center your face';
-      if (currentPose !== POSES[currentPoseIndex].key) return POSES[currentPoseIndex].label;
+      if (!isCentered) return 'Move closer to center';
+      if (currentPose !== POSES[currentPoseIndex].key) return 'Follow the direction above';
       return 'Hold still...';
     }
     return '';
@@ -294,23 +309,31 @@ export default function FaceRecognition() {
         </motion.h2>
 
         {/* Status text */}
-        <div className="mt-2 h-6 flex justify-center items-center">
-          <p className={`text-sm font-medium transition-colors duration-300 ${statusColor}`}>
+        <div className="mt-2 h-7 flex justify-center items-center">
+          <p className={`text-base font-semibold transition-colors duration-300 ${statusColor}`}>
             {statusText()}
           </p>
         </div>
 
-        {/* Pose instruction */}
-        {isPoseStage && (
-          <motion.div
-            key={currentPoseIndex}
-            initial={{ opacity: 0, y: 5 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="mt-1 text-xs text-muted-foreground font-medium"
-          >
-            {POSES[currentPoseIndex].label}
-          </motion.div>
-        )}
+        {/* Pose instruction — large and clear */}
+        <AnimatePresence mode="wait">
+          {isPoseStage && (
+            <motion.div
+              key={currentPoseIndex}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={{ duration: 0.3 }}
+              className="mt-2 flex items-center gap-3"
+            >
+              <span className="text-3xl">{POSES[currentPoseIndex].key === 'left' ? '👈' : POSES[currentPoseIndex].key === 'right' ? '👉' : ''}</span>
+              <span className="text-xl font-bold text-foreground tracking-tight">
+                {POSES[currentPoseIndex].label}
+              </span>
+              <span className="text-3xl">{POSES[currentPoseIndex].key === 'left' ? '' : POSES[currentPoseIndex].key === 'right' ? '' : ''}</span>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* Flight info mini strip */}
         <motion.div
@@ -366,8 +389,19 @@ export default function FaceRecognition() {
               autoPlay
               playsInline
               muted
-              className="absolute inset-0 w-full h-full object-cover scale-x-[-1]"
+              className={`absolute inset-0 w-full h-full object-cover scale-x-[-1] transition-all duration-500 ${
+                snapshotUrl && !isPoseStage ? 'blur-sm opacity-30' : ''
+              }`}
             />
+
+            {/* Frozen snapshot after capture */}
+            {snapshotUrl && !isPoseStage && (
+              <img
+                src={snapshotUrl}
+                alt="Captured"
+                className="absolute inset-0 w-full h-full object-cover scale-x-[-1] z-5"
+              />
+            )}
 
             {/* Scanning line during pose stages */}
             {isPoseStage && faceDetected && (

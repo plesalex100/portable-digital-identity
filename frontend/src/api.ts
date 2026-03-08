@@ -67,7 +67,10 @@ export const verifyFace = async (imageBlob, checkpoint = 'check-in') => {
   const data = await response.json();
 
   if (!response.ok) {
-    console.error(data.message || 'Verification failed');
+    const err = new Error(data.message || 'Verification failed');
+    (err as any).code = data.code;
+    (err as any).data = data.data;
+    throw err;
   }
 
   return data;

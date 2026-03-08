@@ -16,10 +16,13 @@ interface UseFaceDetectionOptions {
 interface FaceDetectionResult {
   isModelLoaded: boolean;
   faceDetected: boolean;
+  faceCount: number;
   currentPose: Pose | null;
   yawAngle: number;
   isStable: boolean;
   isCentered: boolean;
+  /** Latest face landmarks for cropping — null when no face */
+  faceLandmarks: NormalizedLandmark[] | null;
 }
 
 const STABILITY_THRESHOLD = 0.005;
@@ -29,10 +32,12 @@ const MODEL_URL = 'https://storage.googleapis.com/mediapipe-models/face_landmark
 export function useFaceDetection({ videoRef, enabled }: UseFaceDetectionOptions): FaceDetectionResult {
   const [isModelLoaded, setIsModelLoaded] = useState(false);
   const [faceDetected, setFaceDetected] = useState(false);
+  const [faceCount, setFaceCount] = useState(0);
   const [currentPose, setCurrentPose] = useState<Pose | null>(null);
   const [yawAngle, setYawAngle] = useState(0);
   const [isStable, setIsStable] = useState(false);
   const [isCenteredState, setIsCenteredState] = useState(false);
+  const [faceLandmarksState, setFaceLandmarksState] = useState<NormalizedLandmark[] | null>(null);
 
   const landmarkerRef = useRef<FaceLandmarker | null>(null);
   const rafRef = useRef<number>(0);
@@ -110,21 +115,25 @@ export function useFaceDetection({ videoRef, enabled }: UseFaceDetectionOptions)
       const results = landmarker.detectForVideo(video, now);
       frameCountRef.current++;
 
-      const hasface = results.faceLandmarks && results.faceLandmarks.length > 0;
+      const detectedCount = results.faceLandmarks ? results.faceLandmarks.length : 0;
+      const hasface = detectedCount > 0;
 
       // Throttle state updates to every 3 frames
       if (frameCountRef.current % 3 === 0) {
+        setFaceCount(detectedCount);
         if (!hasface) {
           setFaceDetected(false);
           setCurrentPose(null);
           setYawAngle(0);
           setIsStable(false);
           setIsCenteredState(false);
+          setFaceLandmarksState(null);
           landmarkBufferRef.current = [];
         } else {
           const landmarks = results.faceLandmarks[0];
 
           setFaceDetected(true);
+          setFaceLandmarksState(landmarks);
 
           const yaw = calculateYawAngle(landmarks);
           setYawAngle(yaw);
@@ -178,9 +187,11 @@ export function useFaceDetection({ videoRef, enabled }: UseFaceDetectionOptions)
   return {
     isModelLoaded,
     faceDetected,
+    faceCount,
     currentPose,
     yawAngle,
     isStable,
     isCentered: isCenteredState,
+    faceLandmarks: faceLandmarksState,
   };
 }
