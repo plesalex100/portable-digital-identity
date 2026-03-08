@@ -3,6 +3,7 @@ import dotenv from "dotenv";
 dotenv.config();
 
 import Person from "./models/Person.js";
+import Checkpoint from "./models/Checkpoint.js";
 
 const FIRST_NAMES = [
     "James", "Maria", "Yuki", "Ahmed", "Sofia", "Chen", "Olga", "Raj",
@@ -124,9 +125,21 @@ async function seed() {
     await mongoose.connect(MONGO_URL, { dbName: DATABASE_NAME });
     console.log(`Connected to ${DATABASE_NAME}`);
 
-    // Clear existing persons
+    // Clear existing data
     const deleted = await Person.deleteMany({});
     console.log(`Cleared ${deleted.deletedCount} existing persons`);
+
+    // Seed checkpoints
+    await Checkpoint.deleteMany({});
+    const checkpoints = [
+        { id: "security-gate", label: "Security Gate", requiredStatuses: ["checked-in"], nextStatus: "passed-security-gate" },
+        { id: "immigration", label: "Immigration Control", requiredStatuses: ["passed-security-gate"], nextStatus: "passed-immigration" },
+        { id: "duty-free", label: "Duty-Free Shops", requiredStatuses: ["passed-immigration", "at-lounge"], nextStatus: "at-duty-free" },
+        { id: "lounge", label: "Lounge Access", requiredStatuses: ["passed-immigration", "at-duty-free"], nextStatus: "at-lounge" },
+        { id: "gate", label: "Boarding Gate", requiredStatuses: ["passed-immigration", "at-duty-free", "at-lounge"], nextStatus: "passed-gate" },
+    ];
+    await Checkpoint.insertMany(checkpoints);
+    console.log(`Seeded ${checkpoints.length} checkpoints`);
 
     // Generate 100 passengers spread across 4 flights (~25 each)
     const passengers: ReturnType<typeof generatePerson>[] = [];

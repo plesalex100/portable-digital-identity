@@ -142,10 +142,10 @@ router.post("/enroll", upload.array("images"), async (req, res) => {
 const STATUS_LABELS: Record<string, string> = {
     "checked-in":            "Checked In",
     "passed-security-gate":  "Security Gate",
-    "passed-immigration":    "Immigration",
-    "at-duty-free":          "At Duty-Free",
-    "at-lounge":             "At Lounge",
-    "passed-gate":           "Gate",
+    "passed-immigration":    "Immigration Control",
+    "at-duty-free":          "Duty-Free Shops",
+    "at-lounge":             "Lounge Access",
+    "passed-gate":           "Boarding Gate",
 };
 
 router.post("/verify", upload.single("image"), async (req, res) => {

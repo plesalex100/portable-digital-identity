@@ -20,11 +20,11 @@ import {
 
 const STATUS_CONFIG = {
   'checked-in':             { label: 'Checked In',       color: 'bg-blue-500',    text: 'text-blue-600',    bg: 'bg-blue-50',      border: 'border-blue-200' },
-  'passed-security-gate':   { label: 'Security Gate',    color: 'bg-emerald-500', text: 'text-emerald-600', bg: 'bg-emerald-50',   border: 'border-emerald-200' },
-  'passed-immigration':     { label: 'Immigration',      color: 'bg-teal-500',    text: 'text-teal-600',    bg: 'bg-teal-50',      border: 'border-teal-200' },
-  'at-duty-free':           { label: 'At Duty-Free',     color: 'bg-amber-500',   text: 'text-amber-600',   bg: 'bg-amber-50',     border: 'border-amber-200' },
-  'at-lounge':              { label: 'At Lounge',        color: 'bg-violet-500',  text: 'text-violet-600',  bg: 'bg-violet-50',    border: 'border-violet-200' },
-  'passed-gate':            { label: 'Gate',             color: 'bg-sky-500',     text: 'text-sky-600',     bg: 'bg-sky-50',       border: 'border-sky-200' },
+  'passed-security-gate':   { label: 'Security Gate',      color: 'bg-emerald-500', text: 'text-emerald-600', bg: 'bg-emerald-50',   border: 'border-emerald-200' },
+  'passed-immigration':     { label: 'Immigration Control', color: 'bg-teal-500',    text: 'text-teal-600',    bg: 'bg-teal-50',      border: 'border-teal-200' },
+  'at-duty-free':           { label: 'Duty-Free Shops',    color: 'bg-amber-500',   text: 'text-amber-600',   bg: 'bg-amber-50',     border: 'border-amber-200' },
+  'at-lounge':              { label: 'Lounge Access',      color: 'bg-violet-500',  text: 'text-violet-600',  bg: 'bg-violet-50',    border: 'border-violet-200' },
+  'passed-gate':            { label: 'Boarding Gate',      color: 'bg-sky-500',     text: 'text-sky-600',     bg: 'bg-sky-50',       border: 'border-sky-200' },
 };
 
 const STATUS_ORDER = Object.keys(STATUS_CONFIG);

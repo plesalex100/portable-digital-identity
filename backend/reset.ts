@@ -87,6 +87,7 @@ async function cleanDatabase() {
 // ─── Seed (reuses existing seed logic inline) ────────────────────────────────
 
 import Person from "./models/Person.js";
+import Checkpoint from "./models/Checkpoint.js";
 
 const FIRST_NAMES = [
     "James", "Maria", "Yuki", "Ahmed", "Sofia", "Chen", "Olga", "Raj",
@@ -225,6 +226,19 @@ async function seedDatabase() {
     }
 }
 
+async function seedCheckpoints() {
+    const checkpoints = [
+        { id: "security-gate", label: "Security Gate", requiredStatuses: ["checked-in"], nextStatus: "passed-security-gate" },
+        { id: "immigration", label: "Immigration Control", requiredStatuses: ["passed-security-gate"], nextStatus: "passed-immigration" },
+        { id: "duty-free", label: "Duty-Free Shops", requiredStatuses: ["passed-immigration", "at-lounge"], nextStatus: "at-duty-free" },
+        { id: "lounge", label: "Lounge Access", requiredStatuses: ["passed-immigration", "at-duty-free"], nextStatus: "at-lounge" },
+        { id: "gate", label: "Boarding Gate", requiredStatuses: ["passed-immigration", "at-duty-free", "at-lounge"], nextStatus: "passed-gate" },
+    ];
+
+    await Checkpoint.insertMany(checkpoints);
+    console.log(`Seed: inserted ${checkpoints.length} checkpoints`);
+}
+
 // ─── Main ────────────────────────────────────────────────────────────────────
 
 async function main() {
@@ -238,8 +252,12 @@ async function main() {
     console.log("\n--- Step 2: Cleaning database ---");
     await cleanDatabase();
 
-    // 3. Re-seed
-    console.log("\n--- Step 3: Seeding fresh data ---");
+    // 3. Insert checkpoints
+    console.log("\n--- Step 3: Inserting checkpoints ---");
+    await seedCheckpoints();
+
+    // 4. Re-seed passengers
+    console.log("\n--- Step 4: Seeding fresh data ---");
     await seedDatabase();
 
     await mongoose.disconnect();

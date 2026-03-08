@@ -5,9 +5,9 @@ import { Badge } from '@/components/ui/badge';
 
 const LANE_CONFIG = {
   'checked-in':             { label: 'Registered',      color: 'bg-blue-500',    text: 'text-blue-700',    bg: 'bg-blue-50',    border: 'border-blue-200',    ring: 'ring-blue-200' },
-  'passed-security-gate':   { label: 'Security Gate',   color: 'bg-emerald-500', text: 'text-emerald-700', bg: 'bg-emerald-50', border: 'border-emerald-200', ring: 'ring-emerald-200' },
-  'passed-immigration':     { label: 'Immigration',     color: 'bg-teal-500',    text: 'text-teal-700',    bg: 'bg-teal-50',    border: 'border-teal-200',    ring: 'ring-teal-200' },
-  'passed-gate':            { label: 'Gate',            color: 'bg-sky-500',     text: 'text-sky-700',     bg: 'bg-sky-50',     border: 'border-sky-200',     ring: 'ring-sky-200' },
+  'passed-security-gate':   { label: 'Security Gate',      color: 'bg-emerald-500', text: 'text-emerald-700', bg: 'bg-emerald-50', border: 'border-emerald-200', ring: 'ring-emerald-200' },
+  'passed-immigration':     { label: 'Immigration Control', color: 'bg-teal-500',   text: 'text-teal-700',    bg: 'bg-teal-50',    border: 'border-teal-200',    ring: 'ring-teal-200' },
+  'passed-gate':            { label: 'Boarding Gate',      color: 'bg-sky-500',     text: 'text-sky-700',     bg: 'bg-sky-50',     border: 'border-sky-200',     ring: 'ring-sky-200' },
 };
 const LANE_ORDER = Object.keys(LANE_CONFIG);
 
