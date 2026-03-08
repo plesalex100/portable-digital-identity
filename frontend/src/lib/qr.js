@@ -14,7 +14,7 @@ const options = {
     },
     "dotsOptions": {
         "type": "rounded",
-        "color": "#FFBC1D", //"#7e3cda",
+        "color": "#ffffff", //"#7e3cda",
         "roundSize": true
     },
     "backgroundOptions": {
@@ -36,7 +36,7 @@ const options = {
     },
     "cornersSquareOptions": {
         "type": "extra-rounded",
-        "color": "#FFBC1D", //"#9d89fc"
+        "color": "#ffffff", //"#9d89fc"
     },
     "cornersSquareOptionsHelper": {
         "colorType": {
@@ -53,7 +53,7 @@ const options = {
     },
     "cornersDotOptions": {
         "type": "",
-        "color": "#FFBC1D",
+        "color": "#ffffff",
     },
     "cornersDotOptionsHelper": {
         "colorType": {
