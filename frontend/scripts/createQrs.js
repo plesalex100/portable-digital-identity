@@ -34,6 +34,12 @@ async function generateQRCodes() {
         return;
     }
 
+    const mainOutputPath = path.join(outputDir, 'main.png');
+    await createQRCode(CLIENT_DOMAIN, mainOutputPath);
+    console.log(`Generated QR code for Main Domain:`);
+    console.log(` -> URL: ${CLIENT_DOMAIN}`);
+    console.log(` -> Saved to: ${mainOutputPath}\n`);
+
     for (const cp of checkpoints) {
       const clientPath = `${CLIENT_DOMAIN}/verify/${cp.id}`;
       const outputPath = path.join(outputDir, `${cp.id}.png`);
