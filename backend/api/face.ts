@@ -137,28 +137,26 @@ router.post("/enroll", upload.array("images"), async (req, res) => {
 
 // Checkpoint flow: each checkpoint requires a minimum status and advances to a new status
 const CHECKPOINT_FLOW: Record<string, { requiredStatuses: string[]; nextStatus: PersonStatus; label: string }> = {
-    security:    { requiredStatuses: ["checked-in"],                                        nextStatus: PersonStatus.SECURITY_CLEARED,     label: "Security Screening" },
-    immigration: { requiredStatuses: ["security-cleared"],                                   nextStatus: PersonStatus.IMMIGRATION_CLEARED,  label: "Immigration Control" },
-    "duty-free": { requiredStatuses: ["immigration-cleared", "at-lounge"],                   nextStatus: PersonStatus.AT_DUTY_FREE,         label: "Duty-Free Shops" },
-    lounge:      { requiredStatuses: ["immigration-cleared", "at-duty-free"],                 nextStatus: PersonStatus.AT_LOUNGE,            label: "Lounge Access" },
-    gate:        { requiredStatuses: ["immigration-cleared", "at-duty-free", "at-lounge"],    nextStatus: PersonStatus.AT_GATE,              label: "Boarding Gate" },
-    boarding:    { requiredStatuses: ["at-gate"],                                             nextStatus: PersonStatus.BOARDED,              label: "Boarding" },
+    "check-in":  { requiredStatuses: ["checked-in"],                                              nextStatus: PersonStatus.PASSED_CHECK_IN,      label: "Check-In" },
+    immigration: { requiredStatuses: ["passed-check-in"],                                       nextStatus: PersonStatus.PASSED_IMMIGRATION,   label: "Immigration Control" },
+    "duty-free": { requiredStatuses: ["passed-immigration", "at-lounge"],                       nextStatus: PersonStatus.AT_DUTY_FREE,         label: "Duty-Free Shops" },
+    lounge:      { requiredStatuses: ["passed-immigration", "at-duty-free"],                     nextStatus: PersonStatus.AT_LOUNGE,            label: "Lounge Access" },
+    gate:        { requiredStatuses: ["passed-immigration", "at-duty-free", "at-lounge"],        nextStatus: PersonStatus.PASSED_GATE,          label: "Boarding Gate" },
 };
 
 const STATUS_LABELS: Record<string, string> = {
     "checked-in":           "Checked In",
-    "security-cleared":     "Security Cleared",
-    "immigration-cleared":  "Immigration Cleared",
+    "passed-check-in":      "Passed Check-In",
+    "passed-immigration":   "Passed Immigration",
     "at-duty-free":         "At Duty-Free",
     "at-lounge":            "At Lounge",
-    "at-gate":              "At Gate",
-    "boarded":              "Boarded",
+    "passed-gate":          "Passed Gate",
 };
 
 router.post("/verify", upload.single("image"), async (req, res) => {
     try {
         const file = req.file;
-        const checkpoint = (req.body as { checkpoint?: string }).checkpoint || "security";
+        const checkpoint = (req.body as { checkpoint?: string }).checkpoint || "check-in";
 
         if (!file) {
             res.status(400).json({ success: false, message: "An image file is required (field 'image')" });

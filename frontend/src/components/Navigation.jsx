@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
-import { Plane, ScanFace, CreditCard, LayoutDashboard } from 'lucide-react';
+import { Plane, ScanFace, CreditCard, LayoutDashboard, ShieldCheck } from 'lucide-react';
 
 export default function Navigation() {
   const location = useLocation();
@@ -7,6 +7,7 @@ export default function Navigation() {
   const links = [
     { name: 'Check-in', path: '/', icon: Plane },
     { name: 'Biometric', path: '/face-scan', icon: ScanFace },
+    { name: 'Screening', path: '/verify/check-in', icon: ShieldCheck },
     { name: 'My Pass', path: '/pass', icon: CreditCard },
     { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
   ];
@@ -27,7 +28,9 @@ export default function Navigation() {
       <nav className="sticky bottom-0 left-0 w-full bg-white/90 backdrop-blur-md border-t border-slate-200 flex justify-around items-center py-3 px-2 z-50">
         {links.map((link) => {
           const Icon = link.icon;
-          const isActive = location.pathname === link.path;
+          const isActive = link.path.startsWith('/verify')
+            ? location.pathname.startsWith('/verify')
+            : location.pathname === link.path;
           return (
             <Link
               key={link.path}

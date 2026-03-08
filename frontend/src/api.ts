@@ -51,7 +51,7 @@ export const checkPassenger = async (passportNumber: string) => {
   return response.json();
 };
 
-export const verifyFace = async (imageBlob: Blob, checkpoint = 'security') => {
+export const verifyFace = async (imageBlob, checkpoint = 'check-in') => {
   const formData = new FormData();
   formData.append('image', imageBlob, 'face.jpg');
   formData.append('checkpoint', checkpoint);

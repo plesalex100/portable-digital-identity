@@ -1,33 +1,25 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ShieldCheck, ShieldAlert, ScanFace, RotateCcw, AlertTriangle } from 'lucide-react';
-import { useSearchParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { verifyFace } from '../api';
-import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
 
 const CHECKPOINTS = [
-  { id: 'security', label: 'Security Screening' },
+  { id: 'check-in', label: 'Check-In' },
   { id: 'immigration', label: 'Immigration Control' },
   { id: 'duty-free', label: 'Duty-Free Shops' },
   { id: 'lounge', label: 'Lounge Access' },
   { id: 'gate', label: 'Boarding Gate' },
-  { id: 'boarding', label: 'Boarding' },
 ];
 
 export default function Verification() {
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
   const streamRef = useRef(null);
-  const [searchParams, setSearchParams] = useSearchParams();
+  const { checkpoint: checkpointParam } = useParams();
+  const navigate = useNavigate();
 
-  const initialCheckpoint = CHECKPOINTS.find(cp => cp.id === searchParams.get('checkpoint')) || CHECKPOINTS[0];
-  const [checkpoint, setCheckpoint] = useState(initialCheckpoint);
-
-  useEffect(() => {
-    if (!searchParams.get('checkpoint')) {
-      setSearchParams({ checkpoint: initialCheckpoint.id }, { replace: true });
-    }
-  }, []);
+  const checkpoint = CHECKPOINTS.find(cp => cp.id === checkpointParam) || CHECKPOINTS[0];
 
   const [stage, setStage] = useState('ready'); // ready | scanning | verified | rejected | wrong-order | error
   const [cameraReady, setCameraReady] = useState(false);
@@ -177,30 +169,11 @@ export default function Verification() {
             </div>
           </div>
           <p className="text-muted-foreground text-sm mt-1">
-            Face verification at airport checkpoints
+            {checkpoint.label}
           </p>
         </div>
 
         <div className="flex flex-col gap-5">
-          {/* Checkpoint Selector */}
-          <div className="space-y-1.5">
-            <label className="text-sm font-medium text-foreground">Checkpoint</label>
-            <Select value={checkpoint.id} onValueChange={(val) => {
-                const cp = CHECKPOINTS.find(c => c.id === val);
-                setCheckpoint(cp);
-                setSearchParams({ checkpoint: val });
-              }}>
-              <SelectTrigger className="w-full h-12 rounded-xl">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {CHECKPOINTS.map((cp) => (
-                  <SelectItem key={cp.id} value={cp.id}>{cp.label}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
           {/* Camera View */}
           <div className="space-y-1.5">
             <label className="text-sm font-medium text-foreground">Camera Feed</label>

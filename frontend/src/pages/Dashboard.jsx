@@ -29,12 +29,11 @@ const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
 const STATUS_CONFIG = {
   'checked-in':           { label: 'Checked In',           color: 'bg-blue-500',    text: 'text-blue-600',    bg: 'bg-blue-50',      border: 'border-blue-200' },
-  'security-cleared':     { label: 'Security Cleared',     color: 'bg-emerald-500', text: 'text-emerald-600', bg: 'bg-emerald-50',   border: 'border-emerald-200' },
-  'immigration-cleared':  { label: 'Immigration Cleared',  color: 'bg-teal-500',    text: 'text-teal-600',    bg: 'bg-teal-50',      border: 'border-teal-200' },
+  'passed-check-in':      { label: 'Passed Check-In',      color: 'bg-emerald-500', text: 'text-emerald-600', bg: 'bg-emerald-50',   border: 'border-emerald-200' },
+  'passed-immigration':   { label: 'Passed Immigration',   color: 'bg-teal-500',    text: 'text-teal-600',    bg: 'bg-teal-50',      border: 'border-teal-200' },
   'at-duty-free':         { label: 'At Duty-Free',         color: 'bg-amber-500',   text: 'text-amber-600',   bg: 'bg-amber-50',     border: 'border-amber-200' },
   'at-lounge':            { label: 'At Lounge',            color: 'bg-violet-500',  text: 'text-violet-600',  bg: 'bg-violet-50',    border: 'border-violet-200' },
-  'at-gate':              { label: 'At Gate',              color: 'bg-sky-500',     text: 'text-sky-600',     bg: 'bg-sky-50',       border: 'border-sky-200' },
-  'boarded':              { label: 'Boarded',              color: 'bg-slate-500',   text: 'text-slate-600',   bg: 'bg-slate-100',    border: 'border-slate-200' },
+  'passed-gate':          { label: 'Passed Gate',          color: 'bg-sky-500',     text: 'text-sky-600',     bg: 'bg-sky-50',       border: 'border-sky-200' },
 };
 
 const STATUS_ORDER = Object.keys(STATUS_CONFIG);
@@ -245,8 +244,8 @@ export default function Dashboard() {
 
   const stats = useMemo(() => {
     const total = passengers.length;
-    const cleared = passengers.filter((p) => ['security-cleared', 'immigration-cleared', 'at-duty-free', 'at-lounge', 'at-gate', 'boarded'].includes(p.status)).length;
-    const atGate = passengers.filter((p) => ['at-gate', 'boarded'].includes(p.status)).length;
+    const cleared = passengers.filter((p) => ['passed-check-in', 'passed-immigration', 'at-duty-free', 'at-lounge', 'passed-gate'].includes(p.status)).length;
+    const atGate = passengers.filter((p) => ['passed-gate'].includes(p.status)).length;
     const flights = new Set(passengers.map((p) => p.flightNumber)).size;
     return { total, cleared, atGate, flights };
   }, [passengers]);

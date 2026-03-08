@@ -1,4 +1,4 @@
-import { Routes, Route, useLocation } from 'react-router-dom';
+import { Routes, Route, useLocation, Navigate } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
 import PassportEntry from './pages/PassportEntry';
 import FaceRecognition from './pages/FaceRecognition';
@@ -20,7 +20,8 @@ function AnimatedRoutes() {
         <Route path="/checked-in" element={<CheckedIn />} />
         <Route path="/face-scan" element={<FaceRecognition />} />
         <Route path="/pass" element={<FinalPass />} />
-        <Route path="/verify" element={<Verification />} />
+        <Route path="/verify" element={<Navigate to="/verify/check-in" replace />} />
+        <Route path="/verify/:checkpoint" element={<Verification />} />
         <Route path="/dashboard" element={<Dashboard />} />
       </Routes>
     </AnimatePresence>
