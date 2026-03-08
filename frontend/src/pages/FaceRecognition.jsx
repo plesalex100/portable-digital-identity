@@ -21,14 +21,13 @@ export default function FaceRecognition() {
   const navigate = useNavigate();
   const location = useLocation();
   const userData = location.state?.userData || getSession();
+  const { trigger: haptic } = useWebHaptics();
 
   useEffect(() => {
     if (!userData) navigate('/', { replace: true });
   }, []);
 
   if (!userData) return null;
-
-  const { trigger: haptic } = useWebHaptics();
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
   const streamRef = useRef(null);
