@@ -2,6 +2,13 @@
 
 This is the project of winning team **camelCaseOnly**
 
+### Team members
+Pleș Alexandru-Nicușor
+Ștefan Eduard
+Raul Covaci
+Madar Bogdan Florin
+Fanea Mihai
+
 ### Tech Stack
 ![](https://skillicons.dev/icons?i=ts)
 ![](https://skillicons.dev/icons?i=react)
@@ -36,3 +43,9 @@ Face recognition at check-in, security, passport control, boarding, dutyfree
 
 - Boarding Complete
 Final verification at gate, no documents, no friction, just you
+
+### Demo
+_These demos may be taken down in the near future_ <br/>
+[Check-in](https://hacktech.gtap.ro) <br/>
+[Verification](https://hacktech.gtap.ro/verify) <br/>
+[Dashboard](https://hacktech.gtap.ro/verify)
