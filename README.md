@@ -3,11 +3,11 @@
 This is the project of winning team **camelCaseOnly**
 
 ### Team members
-Pleș Alexandru-Nicușor
-Ștefan Eduard
-Raul Covaci
-Madar Bogdan Florin
-Fanea Mihai
+- Pleș Alexandru-Nicușor [![](linkedin.svg)](https://www.linkedin.com/in/ples-alexandru/)
+- Ștefan Eduard [![](linkedin.svg)](https://www.linkedin.com/in/eduard-stefan-089371100/)
+- Raul Covaci [![](linkedin.svg)](https://www.linkedin.com/in/raul-covaci/)
+- Madar Bogdan Florin [![](linkedin.svg)](https://www.linkedin.com/in/bogdan-madar-5834a1333/)
+- Fanea Mihai [![](linkedin.svg)](https://www.linkedin.com/in/mihai-fanea-4b141638a/)
 
 ### Tech Stack
 ![](https://skillicons.dev/icons?i=ts)
