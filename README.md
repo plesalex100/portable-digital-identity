@@ -48,4 +48,4 @@ Final verification at gate, no documents, no friction, just you
 _These demos may be taken down in the near future_ <br/>
 [Check-in](https://hacktech.gtap.ro) <br/>
 [Verification](https://hacktech.gtap.ro/verify) <br/>
-[Dashboard](https://hacktech.gtap.ro/verify)
+[Dashboard](https://hacktech.gtap.ro/dashboard)
